@@ -1,0 +1,258 @@
+/* Container */
+.gemini-assistant-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+    font-family: var(--font-interface);
+}
+
+/* Header */
+.gemini-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--background-modifier-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--background-secondary);
+    gap: 0.5rem;
+}
+
+.gemini-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.gemini-header-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.gemini-header-btn:hover {
+    color: var(--text-error);
+    background-color: var(--background-modifier-hover);
+}
+
+.gemini-header h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-accent);
+    flex: 1;
+}
+
+.gemini-model-select {
+    font-size: 0.75rem;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--background-modifier-border);
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+    max-width: 120px;
+}
+
+/* Chat Area */
+.gemini-chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: var(--background-primary);
+}
+
+.gemini-empty-state {
+    text-align: center;
+    color: var(--text-muted);
+    margin-top: 2.5rem;
+    font-size: 0.875rem;
+}
+
+/* Messages */
+.gemini-message {
+    display: flex;
+    width: 100%;
+}
+
+.gemini-message.user {
+    justify-content: flex-end;
+}
+
+.gemini-message.model {
+    justify-content: flex-start;
+}
+
+.gemini-bubble {
+    max-width: 85%;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.gemini-message.user .gemini-bubble {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.gemini-message.model .gemini-bubble {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+/* Copy Button */
+.gemini-copy-btn {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    background-color: var(--background-modifier-hover);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 2px 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    z-index: 10;
+}
+
+.gemini-message.user .gemini-copy-btn {
+    background-color: var(--background-primary);
+    /* Contrast against blue bubble */
+    border-color: var(--background-modifier-border);
+    color: var(--text-normal);
+    right: auto;
+    /* Position on left for user messages? Or keep right? */
+    left: -0.5rem;
+}
+
+.gemini-bubble:hover .gemini-copy-btn {
+    opacity: 1;
+}
+
+/* Inputs Container */
+.gemini-inputs {
+    border-top: 1px solid var(--background-modifier-border);
+    background-color: var(--background-secondary);
+}
+
+/* Input Forms */
+.gemini-input-form {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gemini-input-form:last-child {
+    border-bottom: none;
+}
+
+.gemini-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.gemini-input {
+    width: 100%;
+    border-radius: 9999px;
+    padding: 0.5rem 2.5rem 0.5rem 1rem;
+    border: 1px solid var(--background-modifier-border);
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.gemini-input:focus {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+/* Specific Styles for Obsidian vs Web */
+.gemini-input.obsidian {
+    background-color: rgba(124, 58, 237, 0.05);
+    /* Purple tint */
+    border-color: rgba(124, 58, 237, 0.2);
+}
+
+.gemini-input.obsidian:focus {
+    border-color: #7c3aed;
+    /* Purple-600 */
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+}
+
+.gemini-input.web {
+    background-color: rgba(37, 99, 235, 0.05);
+    /* Blue tint */
+    border-color: rgba(37, 99, 235, 0.2);
+}
+
+.gemini-input.web:focus {
+    border-color: #2563eb;
+    /* Blue-600 */
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.gemini-send-btn {
+    position: absolute;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.gemini-send-btn:hover {
+    opacity: 1;
+}
+
+.gemini-send-btn.obsidian {
+    color: #7c3aed;
+    /* Purple */
+}
+
+.gemini-send-btn.web {
+    color: #2563eb;
+    /* Blue */
+}
+
+/* Markdown Content */
+.gemini-markdown p {
+    margin-bottom: 0.5rem;
+}
+
+.gemini-markdown p:last-child {
+    margin-bottom: 0;
+}
+
+.gemini-markdown pre {
+    background-color: var(--background-primary);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    overflow-x: auto;
+}
+
+.gemini-markdown code {
+    font-family: var(--font-monospace);
+    font-size: 0.85em;
+}

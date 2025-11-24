@@ -1,0 +1,30 @@
+{
+    "name": "gemini-assistant",
+    "version": "1.0.0",
+    "description": "Obsidian plugin for Gemini Assistant",
+    "main": "main.js",
+    "scripts": {
+        "dev": "node esbuild.config.mjs",
+        "build": "node esbuild.config.mjs production"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/node": "^16.11.6",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "builtin-modules": "^5.0.0",
+        "esbuild": "0.17.3",
+        "obsidian": "latest",
+        "tslib": "2.4.0",
+        "typescript": "4.7.4"
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "lucide-react": "^0.263.1",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-markdown": "^8.0.7"
+    }
+}
