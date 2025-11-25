@@ -2,7 +2,7 @@ import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { GeminiService } from '../services/gemini';
 import { Notice } from 'obsidian';
-import { Copy, Send, Globe, Trash2 } from 'lucide-react';
+import { Copy, Send, Globe, Trash2, RefreshCw } from 'lucide-react';
 
 interface AIChatProps {
     geminiService: GeminiService;
@@ -125,6 +125,14 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
         new Notice('Copied to clipboard');
     };
 
+    const copyAll = () => {
+        const allText = messages
+            .map(m => `**${m.role === 'user' ? 'User' : 'Gemini'}**: ${m.text}`)
+            .join('\n\n');
+        navigator.clipboard.writeText(allText);
+        new Notice('Copied entire chat to clipboard');
+    };
+
     return (
         <div className="gemini-assistant-container">
             <div className="gemini-header">
@@ -140,11 +148,27 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
                         ))}
                     </select>
                     <button
+                        onClick={copyAll}
+                        className="gemini-header-btn"
+                        title="Copy Conversation"
+                        style={{ gap: '4px' }}
+                    >
+                        <Copy size={16} />
+                        <span style={{ fontSize: '0.75rem' }}>Copy</span>
+                    </button>
+                    <button
                         onClick={clearChat}
                         className="gemini-header-btn"
                         title="Clear Chat History"
                     >
                         <Trash2 size={16} />
+                    </button>
+                    <button
+                        onClick={() => geminiService.syncPlugin()}
+                        className="gemini-header-btn"
+                        title="Sync Plugin Code"
+                    >
+                        <RefreshCw size={16} />
                     </button>
                 </div>
             </div>

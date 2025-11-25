@@ -33534,6 +33534,20 @@ var Globe = createLucideIcon$1("Globe", [
   ]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/refresh-cw.mjs
+var RefreshCw = createLucideIcon$1("RefreshCw", [
+  [
+    "path",
+    { d: "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8", key: "v9h5vc" }
+  ],
+  ["path", { d: "M21 3v5h-5", key: "1q7to0" }],
+  [
+    "path",
+    { d: "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16", key: "3uifl3" }
+  ],
+  ["path", { d: "M8 16H3v5", key: "1cv678" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/send.mjs
 var Send = createLucideIcon$1("Send", [
   ["path", { d: "m22 2-7 20-4-9-9-4Z", key: "1q3vgg" }],
@@ -33646,6 +33660,11 @@ ${gemContent}`;
     navigator.clipboard.writeText(text4);
     new import_obsidian.Notice("Copied to clipboard");
   };
+  const copyAll = () => {
+    const allText = messages.map((m) => `**${m.role === "user" ? "User" : "Gemini"}**: ${m.text}`).join("\n\n");
+    navigator.clipboard.writeText(allText);
+    new import_obsidian.Notice("Copied entire chat to clipboard");
+  };
   return /* @__PURE__ */ React3.createElement("div", { className: "gemini-assistant-container" }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-header" }, /* @__PURE__ */ React3.createElement("h2", null, "Gemini Assistant"), /* @__PURE__ */ React3.createElement("div", { className: "gemini-header-controls" }, /* @__PURE__ */ React3.createElement(
     "select",
     {
@@ -33657,11 +33676,29 @@ ${gemContent}`;
   ), /* @__PURE__ */ React3.createElement(
     "button",
     {
+      onClick: copyAll,
+      className: "gemini-header-btn",
+      title: "Copy Conversation",
+      style: { gap: "4px" }
+    },
+    /* @__PURE__ */ React3.createElement(Copy, { size: 16 }),
+    /* @__PURE__ */ React3.createElement("span", { style: { fontSize: "0.75rem" } }, "Copy")
+  ), /* @__PURE__ */ React3.createElement(
+    "button",
+    {
       onClick: clearChat,
       className: "gemini-header-btn",
       title: "Clear Chat History"
     },
     /* @__PURE__ */ React3.createElement(Trash2, { size: 16 })
+  ), /* @__PURE__ */ React3.createElement(
+    "button",
+    {
+      onClick: () => geminiService.syncPlugin(),
+      className: "gemini-header-btn",
+      title: "Sync Plugin Code"
+    },
+    /* @__PURE__ */ React3.createElement(RefreshCw, { size: 16 })
   ))), /* @__PURE__ */ React3.createElement("div", { className: "gemini-chat-area" }, messages.length === 0 && /* @__PURE__ */ React3.createElement("div", { className: "gemini-empty-state" }, "Ask questions about your vault,", /* @__PURE__ */ React3.createElement("br", null), "or search the web."), messages.map((msg, idx) => /* @__PURE__ */ React3.createElement("div", { key: idx, className: `gemini-message ${msg.role}` }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-bubble" }, msg.isThinking ? /* @__PURE__ */ React3.createElement("span", { className: "animate-pulse" }, "Thinking...") : /* @__PURE__ */ React3.createElement(React3.Fragment, null, /* @__PURE__ */ React3.createElement("div", { className: "gemini-markdown" }, /* @__PURE__ */ React3.createElement(ReactMarkdown, null, msg.text || "")), /* @__PURE__ */ React3.createElement(
     "button",
     {
@@ -35116,6 +35153,29 @@ User Request: ${prompt}`;
   async readGem(path2) {
     return await this.vaultService.readFile(path2);
   }
+  async syncPlugin() {
+    new import_obsidian3.Notice("Syncing plugin code...");
+    const { exec } = require("child_process");
+    const pluginDir = this.app.vault.adapter.basePath + "/.obsidian/plugins/gemini-assistant";
+    const sourceDir = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
+    const commands = [
+      `cd "${sourceDir}"`,
+      "git add .",
+      'git commit -m "Sync from Obsidian"',
+      "git pull",
+      "git push"
+    ].join(" && ");
+    exec(commands, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        new import_obsidian3.Notice(`Sync failed: ${error.message}`);
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+      console.error(`stderr: ${stderr}`);
+      new import_obsidian3.Notice("Plugin code synced successfully!");
+    });
+  }
 };
 
 // main.ts
@@ -35123,7 +35183,7 @@ var VIEW_TYPE_GEMINI = "gemini-view";
 var GeminiPlugin = class extends import_obsidian4.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian4.Notice("Gemini Plugin v1.0.1 Loaded");
+    new import_obsidian4.Notice("Gemini Plugin v1.0.13 Loaded");
     this.geminiService = new GeminiService(this.app);
     this.registerView(
       VIEW_TYPE_GEMINI,
