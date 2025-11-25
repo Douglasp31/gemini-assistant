@@ -33694,7 +33694,7 @@ ${gemContent}`;
   ), /* @__PURE__ */ React3.createElement(
     "button",
     {
-      onClick: () => gitService.sync(),
+      onClick: () => geminiService.syncPlugin(),
       className: "gemini-header-btn",
       title: "Sync Plugin Code"
     },
@@ -35153,6 +35153,28 @@ User Request: ${prompt}`;
   async readGem(path2) {
     return await this.vaultService.readFile(path2);
   }
+  async syncPlugin() {
+    new import_obsidian3.Notice("Syncing plugin code...");
+    const { exec } = require("child_process");
+    const sourceDir = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
+    const commands = [
+      `cd "${sourceDir}"`,
+      "git add .",
+      '(git commit -m "Sync from Obsidian" || true)',
+      "git pull --no-rebase",
+      "git push"
+    ].join(" && ");
+    exec(commands, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        new import_obsidian3.Notice(`Sync failed: ${error.message}`);
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+      console.error(`stderr: ${stderr}`);
+      new import_obsidian3.Notice("Plugin code synced successfully!");
+    });
+  }
 };
 
 // src/services/git.ts
@@ -35240,7 +35262,7 @@ var VIEW_TYPE_GEMINI = "gemini-view";
 var GeminiPlugin = class extends import_obsidian5.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian5.Notice("Gemini Plugin v1.0.25 Loaded");
+    new import_obsidian5.Notice("Gemini Plugin v1.0.26 Loaded");
     this.geminiService = new GeminiService(this.app);
     const pluginPath = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
     this.gitService = new GitService(pluginPath);

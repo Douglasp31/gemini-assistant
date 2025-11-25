@@ -319,4 +319,31 @@ export class GeminiService {
     async readGem(path: string): Promise<string> {
         return await this.vaultService.readFile(path);
     }
+
+    async syncPlugin() {
+        new Notice('Syncing plugin code...');
+        const { exec } = require('child_process');
+
+        // Hardcoded source directory as it was in the working version
+        const sourceDir = '/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant';
+
+        const commands = [
+            `cd "${sourceDir}"`,
+            'git add .',
+            '(git commit -m "Sync from Obsidian" || true)',
+            'git pull --no-rebase',
+            'git push'
+        ].join(' && ');
+
+        exec(commands, (error: any, stdout: any, stderr: any) => {
+            if (error) {
+                console.error(`exec error: ${error}`);
+                new Notice(`Sync failed: ${error.message}`);
+                return;
+            }
+            console.log(`stdout: ${stdout}`);
+            console.error(`stderr: ${stderr}`);
+            new Notice('Plugin code synced successfully!');
+        });
+    }
 }

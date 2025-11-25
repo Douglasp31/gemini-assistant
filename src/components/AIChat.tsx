@@ -168,7 +168,7 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
                         <Trash2 size={16} />
                     </button>
                     <button
-                        onClick={() => gitService.sync()}
+                        onClick={() => geminiService.syncPlugin()}
                         className="gemini-header-btn"
                         title="Sync Plugin Code"
                     >
