@@ -35157,7 +35157,9 @@ User Request: ${prompt}`;
     new import_obsidian3.Notice("Syncing plugin code...");
     const { exec } = require("child_process");
     const sourceDir = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
+    const pathFix = "export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core";
     const commands = [
+      pathFix,
       `cd "${sourceDir}"`,
       "git add .",
       '(git commit -m "Sync from Obsidian" || true)',
@@ -35262,7 +35264,7 @@ var VIEW_TYPE_GEMINI = "gemini-view";
 var GeminiPlugin = class extends import_obsidian5.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian5.Notice("Gemini Plugin v1.0.26 Loaded");
+    new import_obsidian5.Notice("Gemini Plugin v1.0.27 Loaded");
     this.geminiService = new GeminiService(this.app);
     const pluginPath = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
     this.gitService = new GitService(pluginPath);

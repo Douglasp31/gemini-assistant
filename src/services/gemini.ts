@@ -324,10 +324,13 @@ export class GeminiService {
         new Notice('Syncing plugin code...');
         const { exec } = require('child_process');
 
-        // Hardcoded source directory as it was in the working version
         const sourceDir = '/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant';
 
+        // Add path to credential helper and common git locations
+        const pathFix = 'export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core';
+
         const commands = [
+            pathFix,
             `cd "${sourceDir}"`,
             'git add .',
             '(git commit -m "Sync from Obsidian" || true)',
