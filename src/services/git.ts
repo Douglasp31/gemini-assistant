@@ -12,23 +12,22 @@ export class GitService {
         new Notice('Starting Git Sync...');
 
         try {
-            // 1. Add all changes
-            await this.runCommand('git', ['add', '.']);
+            // 1. Pull first to avoid conflicts
+            await this.runCommand('git', ['pull', 'origin', 'main']);
+            new Notice('Git Pull Complete');
 
-            // 2. Commit (allow empty)
-            try {
-                await this.runCommand('git', ['commit', '-m', 'Sync from Obsidian']);
-            } catch (e) {
-                // Ignore empty commit error
+            // 2. Check if there are changes to commit
+            const status = await this.runCommand('git', ['status', '--porcelain']);
+
+            if (status.trim()) {
+                // 3. Add, Commit, Push
+                await this.runCommand('git', ['add', '.']);
+                await this.runCommand('git', ['commit', '-m', 'Auto-sync from Obsidian']);
+                await this.runCommand('git', ['push', 'origin', 'main']);
+                new Notice('Git Push Complete: Code synced to GitHub');
+            } else {
+                new Notice('No local changes to push.');
             }
-
-            // 3. Pull (no rebase)
-            await this.runCommand('git', ['pull', '--no-rebase']);
-
-            // 4. Push
-            await this.runCommand('git', ['push']);
-
-            new Notice('Git Sync Complete!');
         } catch (error: any) {
             console.error('Git Sync Failed:', error);
             new Notice(`Git Sync Failed: ${error.message}`);
@@ -63,10 +62,6 @@ export class GitService {
             const env = Object.assign({}, process.env);
             if (process.platform === 'darwin') {
                 env.PATH = `${env.PATH}:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin`;
-                // Add path to git-credential-osxkeychain
-                env.PATH += ':/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core';
-                env.PATH += ':/Library/Developer/CommandLineTools/usr/libexec/git-core';
-                env.PATH += ':/usr/libexec/git-core';
             }
 
             const child = spawn(commandToRun, args, {
