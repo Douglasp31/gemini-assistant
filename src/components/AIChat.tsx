@@ -15,9 +15,13 @@ interface Message {
     isThinking?: boolean;
 }
 import { Notice } from 'obsidian';
-import { Copy, Send, Globe, Trash2, RefreshCw } from 'lucide-react';
+import { Copy, Send, Globe, Trash2, RefreshCw, Paperclip, X } from 'lucide-react';
 
-
+interface Attachment {
+    name: string;
+    data: string; // Base64
+    mimeType: string;
+}
 
 export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getActiveFileContent }) => {
     const [messages, setMessages] = React.useState<Message[]>([]);
@@ -31,6 +35,8 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
     const [gems, setGems] = React.useState<{ name: string, path: string }[]>([]);
     const [selectedGemObsidian, setSelectedGemObsidian] = React.useState('');
     const [selectedGemWeb, setSelectedGemWeb] = React.useState('');
+    const [attachments, setAttachments] = React.useState<Attachment[]>([]);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
         geminiService.getModels().then(setModels);
@@ -52,15 +58,43 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
 
     const clearChat = () => {
         setMessages([]);
+        setAttachments([]);
         new Notice('Chat history cleared');
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (event.target?.result) {
+                    const base64 = (event.target.result as string).split(',')[1];
+                    setAttachments(prev => [...prev, {
+                        name: file.name,
+                        data: base64,
+                        mimeType: file.type
+                    }]);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+        // Reset input
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const removeAttachment = (index: number) => {
+        setAttachments(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e: React.FormEvent, mode: 'obsidian' | 'web') => {
         e.preventDefault();
         const input = mode === 'obsidian' ? obsidianInput : webInput;
-        if (!input.trim()) return;
+        if (!input.trim() && attachments.length === 0) return;
 
-        const userMsg: Message = { role: 'user', text: input };
+        const userMsg: Message = {
+            role: 'user',
+            text: input + (attachments.length > 0 ? `\n[Attached ${attachments.length} file(s)]` : '')
+        };
         setMessages(prev => [...prev, userMsg]);
 
         if (mode === 'obsidian') setObsidianInput('');
@@ -97,14 +131,15 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
 
         try {
             const response = await geminiService.chat(
-                userMsg.text!,
+                input,
                 history,
                 context,
                 selectedModel,
                 mode,
                 (toolMsg) => {
                     new Notice(toolMsg); // Show tool execution as toast
-                }
+                },
+                attachments
             );
 
             setMessages(prev => {
@@ -112,6 +147,7 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
                 newMsgs[newMsgs.length - 1] = { role: 'model', text: response };
                 return newMsgs;
             });
+            setAttachments([]); // Clear attachments after sending
         } catch (err: any) {
             setMessages(prev => {
                 const newMsgs = [...prev];
@@ -202,9 +238,39 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
             </div>
 
             <div className="gemini-inputs">
+                {/* Attachments Preview */}
+                {attachments.length > 0 && (
+                    <div className="gemini-attachments">
+                        {attachments.map((att, idx) => (
+                            <div key={idx} className="gemini-attachment-chip">
+                                <span className="text-xs truncate max-w-[100px]">{att.name}</span>
+                                <button onClick={() => removeAttachment(idx)} className="gemini-attachment-remove">
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={handleFileSelect}
+                    accept="image/*,application/pdf"
+                />
+
                 {/* Obsidian Chat Input */}
                 <form onSubmit={(e) => handleSubmit(e, 'obsidian')} className="gemini-input-form">
                     <div className="gemini-input-wrapper">
+                        <button
+                            type="button"
+                            className="gemini-attach-btn"
+                            onClick={() => fileInputRef.current?.click()}
+                            title="Attach Image or PDF"
+                        >
+                            <Paperclip size={16} />
+                        </button>
                         <input
                             type="text"
                             value={obsidianInput}
@@ -266,6 +332,14 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
                 {/* Web Chat Input */}
                 <form onSubmit={(e) => handleSubmit(e, 'web')} className="gemini-input-form">
                     <div className="gemini-input-wrapper">
+                        <button
+                            type="button"
+                            className="gemini-attach-btn"
+                            onClick={() => fileInputRef.current?.click()}
+                            title="Attach Image or PDF"
+                        >
+                            <Paperclip size={16} />
+                        </button>
                         <input
                             type="text"
                             value={webInput}

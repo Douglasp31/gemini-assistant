@@ -1101,7 +1101,7 @@ var require_react_development = __commonJS({
           var dispatcher = resolveDispatcher();
           return dispatcher.useReducer(reducer, initialArg, init);
         }
-        function useRef(initialValue) {
+        function useRef2(initialValue) {
           var dispatcher = resolveDispatcher();
           return dispatcher.useRef(initialValue);
         }
@@ -1895,7 +1895,7 @@ var require_react_development = __commonJS({
         exports.useLayoutEffect = useLayoutEffect;
         exports.useMemo = useMemo;
         exports.useReducer = useReducer;
-        exports.useRef = useRef;
+        exports.useRef = useRef2;
         exports.useState = useState2;
         exports.useSyncExternalStore = useSyncExternalStore;
         exports.useTransition = useTransition;
@@ -33534,6 +33534,17 @@ var Globe = createLucideIcon$1("Globe", [
   ]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/paperclip.mjs
+var Paperclip = createLucideIcon$1("Paperclip", [
+  [
+    "path",
+    {
+      d: "m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48",
+      key: "1u3ebp"
+    }
+  ]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/send.mjs
 var Send = createLucideIcon$1("Send", [
   ["path", { d: "m22 2-7 20-4-9-9-4Z", key: "1q3vgg" }],
@@ -33549,6 +33560,12 @@ var Trash2 = createLucideIcon$1("Trash2", [
   ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/x.mjs
+var X = createLucideIcon$1("X", [
+  ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
+  ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
+]);
+
 // src/components/AIChat.tsx
 var AIChat = ({ geminiService, gitService, getActiveFileContent }) => {
   const [messages, setMessages] = React3.useState([]);
@@ -33562,6 +33579,8 @@ var AIChat = ({ geminiService, gitService, getActiveFileContent }) => {
   const [gems, setGems] = React3.useState([]);
   const [selectedGemObsidian, setSelectedGemObsidian] = React3.useState("");
   const [selectedGemWeb, setSelectedGemWeb] = React3.useState("");
+  const [attachments, setAttachments] = React3.useState([]);
+  const fileInputRef = React3.useRef(null);
   React3.useEffect(() => {
     geminiService.getModels().then(setModels);
     geminiService.getCustomCommands().then(setCustomCommands);
@@ -33578,14 +33597,42 @@ var AIChat = ({ geminiService, gitService, getActiveFileContent }) => {
   };
   const clearChat = () => {
     setMessages([]);
+    setAttachments([]);
     new import_obsidian.Notice("Chat history cleared");
+  };
+  const handleFileSelect = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        var _a;
+        if ((_a = event.target) == null ? void 0 : _a.result) {
+          const base64 = event.target.result.split(",")[1];
+          setAttachments((prev) => [...prev, {
+            name: file.name,
+            data: base64,
+            mimeType: file.type
+          }]);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    if (fileInputRef.current)
+      fileInputRef.current.value = "";
+  };
+  const removeAttachment = (index2) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index2));
   };
   const handleSubmit = async (e, mode) => {
     e.preventDefault();
     const input = mode === "obsidian" ? obsidianInput : webInput;
-    if (!input.trim())
+    if (!input.trim() && attachments.length === 0)
       return;
-    const userMsg = { role: "user", text: input };
+    const userMsg = {
+      role: "user",
+      text: input + (attachments.length > 0 ? `
+[Attached ${attachments.length} file(s)]` : "")
+    };
     setMessages((prev) => [...prev, userMsg]);
     if (mode === "obsidian")
       setObsidianInput("");
@@ -33617,20 +33664,22 @@ ${gemContent}`;
     }
     try {
       const response = await geminiService.chat(
-        userMsg.text,
+        input,
         history,
         context,
         selectedModel,
         mode,
         (toolMsg) => {
           new import_obsidian.Notice(toolMsg);
-        }
+        },
+        attachments
       );
       setMessages((prev) => {
         const newMsgs = [...prev];
         newMsgs[newMsgs.length - 1] = { role: "model", text: response };
         return newMsgs;
       });
+      setAttachments([]);
     } catch (err) {
       setMessages((prev) => {
         const newMsgs = [...prev];
@@ -33685,7 +33734,28 @@ ${gemContent}`;
       title: "Copy"
     },
     /* @__PURE__ */ React3.createElement(Copy, { size: 12 })
-  )))))), /* @__PURE__ */ React3.createElement("div", { className: "gemini-inputs" }, /* @__PURE__ */ React3.createElement("form", { onSubmit: (e) => handleSubmit(e, "obsidian"), className: "gemini-input-form" }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-input-wrapper" }, /* @__PURE__ */ React3.createElement(
+  )))))), /* @__PURE__ */ React3.createElement("div", { className: "gemini-inputs" }, attachments.length > 0 && /* @__PURE__ */ React3.createElement("div", { className: "gemini-attachments" }, attachments.map((att, idx) => /* @__PURE__ */ React3.createElement("div", { key: idx, className: "gemini-attachment-chip" }, /* @__PURE__ */ React3.createElement("span", { className: "text-xs truncate max-w-[100px]" }, att.name), /* @__PURE__ */ React3.createElement("button", { onClick: () => removeAttachment(idx), className: "gemini-attachment-remove" }, /* @__PURE__ */ React3.createElement(X, { size: 12 }))))), /* @__PURE__ */ React3.createElement(
+    "input",
+    {
+      type: "file",
+      ref: fileInputRef,
+      style: { display: "none" },
+      onChange: handleFileSelect,
+      accept: "image/*,application/pdf"
+    }
+  ), /* @__PURE__ */ React3.createElement("form", { onSubmit: (e) => handleSubmit(e, "obsidian"), className: "gemini-input-form" }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-input-wrapper" }, /* @__PURE__ */ React3.createElement(
+    "button",
+    {
+      type: "button",
+      className: "gemini-attach-btn",
+      onClick: () => {
+        var _a;
+        return (_a = fileInputRef.current) == null ? void 0 : _a.click();
+      },
+      title: "Attach Image or PDF"
+    },
+    /* @__PURE__ */ React3.createElement(Paperclip, { size: 16 })
+  ), /* @__PURE__ */ React3.createElement(
     "input",
     {
       type: "text",
@@ -33728,6 +33798,18 @@ ${gemContent}`;
       className: "rounded border-gray-300 dark:border-gray-600"
     }
   ), /* @__PURE__ */ React3.createElement("label", { htmlFor: "use-active-file" }, "Include active file for context"))), /* @__PURE__ */ React3.createElement("form", { onSubmit: (e) => handleSubmit(e, "web"), className: "gemini-input-form" }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-input-wrapper" }, /* @__PURE__ */ React3.createElement(
+    "button",
+    {
+      type: "button",
+      className: "gemini-attach-btn",
+      onClick: () => {
+        var _a;
+        return (_a = fileInputRef.current) == null ? void 0 : _a.click();
+      },
+      title: "Attach Image or PDF"
+    },
+    /* @__PURE__ */ React3.createElement(Paperclip, { size: 16 })
+  ), /* @__PURE__ */ React3.createElement(
     "input",
     {
       type: "text",
@@ -34902,7 +34984,7 @@ var GeminiService = class {
       ];
     }
   }
-  async chat(prompt, history, context, modelName, mode, onToolExecution) {
+  async chat(prompt, history, context, modelName, mode, onToolExecution, attachments = []) {
     if (!this.genAI)
       await this.initialize();
     if (!this.genAI)
@@ -35016,7 +35098,6 @@ var GeminiService = class {
 ${context}
 
 User Request: ${chatHistory[0].parts[0].text}`;
-    } else if (context) {
     }
     const chat = model.startChat({
       history: chatHistory
@@ -35027,6 +35108,18 @@ User Request: ${chatHistory[0].parts[0].text}`;
 ${context}
 
 User Request: ${prompt}`;
+    }
+    if (attachments && attachments.length > 0) {
+      const parts = [{ text: typeof finalPrompt === "string" ? finalPrompt : "" }];
+      for (const att of attachments) {
+        parts.push({
+          inlineData: {
+            mimeType: att.mimeType,
+            data: att.data
+          }
+        });
+      }
+      finalPrompt = parts;
     }
     let result = await chat.sendMessage(finalPrompt);
     let response = await result.response;
@@ -35242,7 +35335,7 @@ var VIEW_TYPE_GEMINI = "gemini-view";
 var GeminiPlugin = class extends import_obsidian5.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian5.Notice("Gemini Plugin v1.0.31 Loaded");
+    new import_obsidian5.Notice("Gemini Plugin v1.0.32 Loaded");
     this.geminiService = new GeminiService(this.app);
     const pluginPath = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
     this.gitService = new GitService(pluginPath);

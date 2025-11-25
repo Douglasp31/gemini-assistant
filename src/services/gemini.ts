@@ -66,7 +66,8 @@ export class GeminiService {
         context: string | null,
         modelName: string,
         mode: 'obsidian' | 'web',
-        onToolExecution?: (message: string) => void
+        onToolExecution?: (message: string) => void,
+        attachments: { name: string, data: string, mimeType: string }[] = []
     ): Promise<string> {
         if (!this.genAI) await this.initialize();
         if (!this.genAI) throw new Error('API Key not found');
@@ -186,19 +187,34 @@ export class GeminiService {
         // Add context to the first user message if provided
         if (context && chatHistory.length > 0 && chatHistory[0].role === 'user') {
             chatHistory[0].parts[0].text = `Context:\n${context}\n\nUser Request: ${chatHistory[0].parts[0].text}`;
-        } else if (context) {
-            // If no history, prepend context to the new prompt (handled below in sendMessage)
-            // Actually, startChat takes history. If history is empty, we just send prompt.
-            // If history exists, we use it.
         }
 
         const chat = model.startChat({
             history: chatHistory
         });
 
-        let finalPrompt = prompt;
+        let finalPrompt: string | (string | { inlineData: { mimeType: string, data: string } })[] = prompt;
+
         if (context && chatHistory.length === 0) {
             finalPrompt = `Context:\n${context}\n\nUser Request: ${prompt}`;
+        }
+
+        // Handle attachments
+        if (attachments && attachments.length > 0) {
+            const parts: any[] = [{ text: typeof finalPrompt === 'string' ? finalPrompt : '' }];
+            for (const att of attachments) {
+                parts.push({
+                    inlineData: {
+                        mimeType: att.mimeType,
+                        data: att.data
+                    }
+                });
+            }
+            // If we have attachments, finalPrompt becomes an array of parts
+            // But sendMessage expects string | Array<string | Part>
+            // We need to be careful. startChat history is text-only usually.
+            // Actually, sendMessage can take an array of parts.
+            finalPrompt = parts;
         }
 
         let result = await chat.sendMessage(finalPrompt);
