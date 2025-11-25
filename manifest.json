@@ -1,7 +1,7 @@
 {
   "id": "gemini-assistant",
   "name": "Gemini Assistant",
-  "version": "1.0.36",
+  "version": "1.0.40",
   "minAppVersion": "0.15.0",
   "description": "AI-powered assistant for your Obsidian Vault, using Google Gemini.",
   "author": "Gemini Agent",

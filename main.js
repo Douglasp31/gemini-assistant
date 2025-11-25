@@ -33700,6 +33700,31 @@ ${gemContent}`;
     navigator.clipboard.writeText(allText);
     new import_obsidian.Notice("Copied entire chat to clipboard");
   };
+  const handlePaste = (e) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        e.preventDefault();
+        const blob = items[i].getAsFile();
+        if (blob) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            var _a;
+            if ((_a = event.target) == null ? void 0 : _a.result) {
+              const base64 = event.target.result.split(",")[1];
+              setAttachments((prev) => [...prev, {
+                name: "Pasted Image " + new Date().toLocaleTimeString(),
+                data: base64,
+                mimeType: blob.type
+              }]);
+              new import_obsidian.Notice("Image pasted from clipboard");
+            }
+          };
+          reader.readAsDataURL(blob);
+        }
+      }
+    }
+  };
   return /* @__PURE__ */ React3.createElement("div", { className: "gemini-assistant-container" }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-header" }, /* @__PURE__ */ React3.createElement("h2", null, "Gemini Assistant"), /* @__PURE__ */ React3.createElement("div", { className: "gemini-header-controls" }, /* @__PURE__ */ React3.createElement(
     "select",
     {
@@ -33761,6 +33786,7 @@ ${gemContent}`;
       type: "text",
       value: obsidianInput,
       onChange: (e) => setObsidianInput(e.target.value),
+      onPaste: handlePaste,
       placeholder: "Ask Gemini Obsidian...",
       className: "gemini-input obsidian"
     }
@@ -33815,6 +33841,7 @@ ${gemContent}`;
       type: "text",
       value: webInput,
       onChange: (e) => setWebInput(e.target.value),
+      onPaste: handlePaste,
       placeholder: "Ask Gemini Web...",
       className: "gemini-input web"
     }
@@ -34985,6 +35012,7 @@ var GeminiService = class {
     }
   }
   async chat(prompt, history, context, modelName, mode, onToolExecution, attachments = []) {
+    var _a;
     if (!this.genAI)
       await this.initialize();
     if (!this.genAI)
@@ -35174,12 +35202,53 @@ User Request: ${prompt}`;
       functionCalls = response.functionCalls && response.functionCalls() || [];
     }
     try {
-      const text4 = response.text();
-      console.log("Final text response:", text4);
-      return text4;
+      const candidate = (_a = response.candidates) == null ? void 0 : _a[0];
+      if (!candidate || !candidate.content || !candidate.content.parts) {
+        throw new Error("No content in response");
+      }
+      let finalOutput = "";
+      for (const part of candidate.content.parts) {
+        if (part.text) {
+          finalOutput += part.text;
+        } else if (part.inlineData) {
+          const mimeType = part.inlineData.mimeType;
+          const data = part.inlineData.data;
+          finalOutput += `
+![Generated Image](data:${mimeType};base64,${data})
+`;
+        } else if (part.executableCode) {
+          finalOutput += `
+\`\`\`${part.executableCode.language}
+${part.executableCode.code}
+\`\`\`
+`;
+        } else if (part.codeExecutionResult) {
+          finalOutput += `
+Output:
+\`\`\`
+${part.codeExecutionResult.output}
+\`\`\`
+`;
+        }
+      }
+      if (!finalOutput) {
+        throw new Error("No text or image content in response");
+      }
+      console.log("Final processed response:", finalOutput);
+      return finalOutput;
     } catch (e) {
-      console.warn("No text in final response", e);
-      return "";
+      console.warn("Error processing response content", e);
+      if (response.candidates && response.candidates.length > 0) {
+        const candidate = response.candidates[0];
+        if (candidate.finishReason === "SAFETY") {
+          return "Response blocked by safety filters. Please try a different prompt.";
+        } else if (candidate.finishReason === "RECITATION") {
+          return "Response blocked due to recitation check.";
+        } else if (candidate.finishReason === "OTHER") {
+          return "Response blocked for unknown reasons (finishReason: OTHER).";
+        }
+      }
+      return "Error: No response received from the model. It might be blocked or encountered an error.";
     }
   }
   async getCustomCommands() {
@@ -35346,7 +35415,7 @@ var VIEW_TYPE_GEMINI = "gemini-view";
 var GeminiPlugin = class extends import_obsidian5.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian5.Notice("Gemini Plugin v1.0.36 Loaded");
+    new import_obsidian5.Notice("Gemini Plugin v1.0.40 Loaded");
     this.geminiService = new GeminiService(this.app);
     const pluginPath = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
     this.gitService = new GitService(pluginPath);

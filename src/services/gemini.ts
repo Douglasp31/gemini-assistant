@@ -281,12 +281,51 @@ export class GeminiService {
         }
 
         try {
-            const text = response.text();
-            console.log('Final text response:', text);
-            return text;
+            const candidate = response.candidates?.[0];
+            if (!candidate || !candidate.content || !candidate.content.parts) {
+                throw new Error('No content in response');
+            }
+
+            let finalOutput = '';
+
+            for (const part of candidate.content.parts) {
+                if (part.text) {
+                    finalOutput += part.text;
+                } else if (part.inlineData) {
+                    // Handle inline image data
+                    const mimeType = part.inlineData.mimeType;
+                    const data = part.inlineData.data;
+                    finalOutput += `\n![Generated Image](data:${mimeType};base64,${data})\n`;
+                } else if (part.executableCode) {
+                    finalOutput += `\n\`\`\`${part.executableCode.language}\n${part.executableCode.code}\n\`\`\`\n`;
+                } else if (part.codeExecutionResult) {
+                    finalOutput += `\nOutput:\n\`\`\`\n${part.codeExecutionResult.output}\n\`\`\`\n`;
+                }
+            }
+
+            if (!finalOutput) {
+                throw new Error('No text or image content in response');
+            }
+
+            console.log('Final processed response:', finalOutput);
+            return finalOutput;
+
         } catch (e) {
-            console.warn('No text in final response', e);
-            return '';
+            console.warn('Error processing response content', e);
+
+            // Check for safety blocks or other finish reasons
+            if (response.candidates && response.candidates.length > 0) {
+                const candidate = response.candidates[0];
+                if (candidate.finishReason === 'SAFETY') {
+                    return 'Response blocked by safety filters. Please try a different prompt.';
+                } else if (candidate.finishReason === 'RECITATION') {
+                    return 'Response blocked due to recitation check.';
+                } else if (candidate.finishReason === 'OTHER') {
+                    return 'Response blocked for unknown reasons (finishReason: OTHER).';
+                }
+            }
+
+            return 'Error: No response received from the model. It might be blocked or encountered an error.';
         }
     }
 

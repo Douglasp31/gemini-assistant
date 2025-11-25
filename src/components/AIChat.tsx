@@ -173,6 +173,31 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
         new Notice('Copied entire chat to clipboard');
     };
 
+    const handlePaste = (e: React.ClipboardEvent) => {
+        const items = e.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                e.preventDefault();
+                const blob = items[i].getAsFile();
+                if (blob) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        if (event.target?.result) {
+                            const base64 = (event.target.result as string).split(',')[1];
+                            setAttachments(prev => [...prev, {
+                                name: 'Pasted Image ' + new Date().toLocaleTimeString(),
+                                data: base64,
+                                mimeType: blob.type
+                            }]);
+                            new Notice('Image pasted from clipboard');
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                }
+            }
+        }
+    };
+
     return (
         <div className="gemini-assistant-container">
             <div className="gemini-header">
@@ -275,6 +300,7 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
                             type="text"
                             value={obsidianInput}
                             onChange={(e) => setObsidianInput(e.target.value)}
+                            onPaste={handlePaste}
                             placeholder="Ask Gemini Obsidian..."
                             className="gemini-input obsidian"
                         />
@@ -344,6 +370,7 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
                             type="text"
                             value={webInput}
                             onChange={(e) => setWebInput(e.target.value)}
+                            onPaste={handlePaste}
                             placeholder="Ask Gemini Web..."
                             className="gemini-input web"
                         />
