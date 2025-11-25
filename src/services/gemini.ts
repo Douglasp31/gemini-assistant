@@ -343,7 +343,7 @@ export class GeminiService {
             `cd "${sourceDir}"`,
             'git add .',
             '(git commit -m "Sync from Obsidian" || true)',
-            'git pull',
+            'git pull --no-rebase',
             'git push'
         ].join(' && ');
 
