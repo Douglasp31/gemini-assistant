@@ -13,7 +13,7 @@ export default class GeminiPlugin extends Plugin {
 
     async onload() {
         console.log('Loading Gemini Assistant Plugin');
-        new Notice('Gemini Plugin v1.0.29 Loaded');
+        new Notice('Gemini Plugin v1.0.30 Loaded');
 
         this.geminiService = new GeminiService(this.app);
 

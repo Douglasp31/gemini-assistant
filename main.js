@@ -33534,20 +33534,6 @@ var Globe = createLucideIcon$1("Globe", [
   ]
 ]);
 
-// node_modules/lucide-react/dist/esm/icons/refresh-cw.mjs
-var RefreshCw = createLucideIcon$1("RefreshCw", [
-  [
-    "path",
-    { d: "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8", key: "v9h5vc" }
-  ],
-  ["path", { d: "M21 3v5h-5", key: "1q7to0" }],
-  [
-    "path",
-    { d: "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16", key: "3uifl3" }
-  ],
-  ["path", { d: "M8 16H3v5", key: "1cv678" }]
-]);
-
 // node_modules/lucide-react/dist/esm/icons/send.mjs
 var Send = createLucideIcon$1("Send", [
   ["path", { d: "m22 2-7 20-4-9-9-4Z", key: "1q3vgg" }],
@@ -33691,14 +33677,6 @@ ${gemContent}`;
       title: "Clear Chat History"
     },
     /* @__PURE__ */ React3.createElement(Trash2, { size: 16 })
-  ), /* @__PURE__ */ React3.createElement(
-    "button",
-    {
-      onClick: () => gitService.sync(),
-      className: "gemini-header-btn",
-      title: "Sync Plugin Code"
-    },
-    /* @__PURE__ */ React3.createElement(RefreshCw, { size: 16 })
   ))), /* @__PURE__ */ React3.createElement("div", { className: "gemini-chat-area" }, messages.length === 0 && /* @__PURE__ */ React3.createElement("div", { className: "gemini-empty-state" }, "Ask questions about your vault,", /* @__PURE__ */ React3.createElement("br", null), "or search the web."), messages.map((msg, idx) => /* @__PURE__ */ React3.createElement("div", { key: idx, className: `gemini-message ${msg.role}` }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-bubble" }, msg.isThinking ? /* @__PURE__ */ React3.createElement("span", { className: "animate-pulse" }, "Thinking...") : /* @__PURE__ */ React3.createElement(React3.Fragment, null, /* @__PURE__ */ React3.createElement("div", { className: "gemini-markdown" }, /* @__PURE__ */ React3.createElement(ReactMarkdown, null, msg.text || "")), /* @__PURE__ */ React3.createElement(
     "button",
     {
@@ -35264,7 +35242,7 @@ var VIEW_TYPE_GEMINI = "gemini-view";
 var GeminiPlugin = class extends import_obsidian5.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian5.Notice("Gemini Plugin v1.0.29 Loaded");
+    new import_obsidian5.Notice("Gemini Plugin v1.0.30 Loaded");
     this.geminiService = new GeminiService(this.app);
     const pluginPath = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
     this.gitService = new GitService(pluginPath);

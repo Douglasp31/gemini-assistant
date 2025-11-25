@@ -167,13 +167,7 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
                     >
                         <Trash2 size={16} />
                     </button>
-                    <button
-                        onClick={() => gitService.sync()}
-                        className="gemini-header-btn"
-                        title="Sync Plugin Code"
-                    >
-                        <RefreshCw size={16} />
-                    </button>
+
                 </div>
             </div>
 
