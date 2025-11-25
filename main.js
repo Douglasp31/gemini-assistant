@@ -35161,7 +35161,7 @@ User Request: ${prompt}`;
     const commands = [
       `cd "${sourceDir}"`,
       "git add .",
-      'git commit -m "Sync from Obsidian"',
+      '(git commit -m "Sync from Obsidian" || true)',
       "git pull",
       "git push"
     ].join(" && ");
@@ -35183,7 +35183,7 @@ var VIEW_TYPE_GEMINI = "gemini-view";
 var GeminiPlugin = class extends import_obsidian4.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian4.Notice("Gemini Plugin v1.0.13 Loaded");
+    new import_obsidian4.Notice("Gemini Plugin v1.0.14 Loaded");
     this.geminiService = new GeminiService(this.app);
     this.registerView(
       VIEW_TYPE_GEMINI,

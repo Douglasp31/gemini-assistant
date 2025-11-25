@@ -342,7 +342,7 @@ export class GeminiService {
         const commands = [
             `cd "${sourceDir}"`,
             'git add .',
-            'git commit -m "Sync from Obsidian"',
+            '(git commit -m "Sync from Obsidian" || true)',
             'git pull',
             'git push'
         ].join(' && ');
