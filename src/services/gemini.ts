@@ -2,7 +2,11 @@ import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { App, Notice, TFile } from 'obsidian';
 import { VaultService } from './vault';
 
-export class GeminiService {
+import { LLMProvider } from '../interfaces/llm';
+
+export class GeminiService implements LLMProvider {
+    id = 'gemini';
+    name = 'Google Gemini';
     private genAI: GoogleGenerativeAI | null = null;
     private vaultService: VaultService;
     private app: App;

@@ -1,10 +1,10 @@
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
-import { GeminiService } from '../services/gemini';
+import { LLMProvider } from '../interfaces/llm';
 import { GitService } from '../services/git';
 
 interface AIChatProps {
-    geminiService: GeminiService;
+    providers: LLMProvider[];
     gitService: GitService;
     getActiveFileContent: () => Promise<string | null>;
 }
@@ -23,12 +23,13 @@ interface Attachment {
     mimeType: string;
 }
 
-export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getActiveFileContent }) => {
+export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActiveFileContent }) => {
     const [messages, setMessages] = React.useState<Message[]>([]);
     const [obsidianInput, setObsidianInput] = React.useState('');
     const [webInput, setWebInput] = React.useState('');
     const [models, setModels] = React.useState<{ id: string, name: string }[]>([]);
-    const [selectedModel, setSelectedModel] = React.useState('gemini-1.5-flash');
+    const [selectedProviderId, setSelectedProviderId] = React.useState(providers[0]?.id || '');
+    const [selectedModel, setSelectedModel] = React.useState('');
     const [useActiveFile, setUseActiveFile] = React.useState(false);
     const [useActiveFileWeb, setUseActiveFileWeb] = React.useState(false);
     const [customCommands, setCustomCommands] = React.useState<{ label: string, prompt: string }[]>([]);
@@ -38,22 +39,48 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
     const [attachments, setAttachments] = React.useState<Attachment[]>([]);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    React.useEffect(() => {
-        geminiService.getModels().then(setModels);
-        geminiService.getCustomCommands().then(setCustomCommands);
-        geminiService.getGems().then(setGems);
+    const activeProvider = providers.find(p => p.id === selectedProviderId) || providers[0];
 
-        // Load saved model preference
-        const savedModel = localStorage.getItem('gemini-assistant-last-model');
-        if (savedModel) {
-            setSelectedModel(savedModel);
+    React.useEffect(() => {
+        if (activeProvider) {
+            activeProvider.getModels().then(ms => {
+                setModels(ms);
+                if (ms.length > 0) {
+                    // Try to restore saved model for this provider
+                    const savedModel = localStorage.getItem(`gemini-assistant-last-model-${activeProvider.id}`);
+                    if (savedModel && ms.find(m => m.id === savedModel)) {
+                        setSelectedModel(savedModel);
+                    } else {
+                        setSelectedModel(ms[0].id);
+                    }
+                }
+            });
+
+            // Load custom commands and gems (assuming these are shared or handled by the first provider for now, 
+            // or we could abstract this to a separate service. For now, we'll cast to any if needed or assume provider has these methods 
+            // but LLMProvider interface doesn't enforce them. 
+            // Let's assume GeminiService is the one handling Vault operations for now.
+            // We can find the Gemini provider to load these.
+            const geminiProvider = providers.find(p => p.id === 'gemini');
+            if (geminiProvider) {
+                // @ts-ignore
+                if (geminiProvider.getCustomCommands) geminiProvider.getCustomCommands().then(setCustomCommands);
+                // @ts-ignore
+                if (geminiProvider.getGems) geminiProvider.getGems().then(setGems);
+            }
         }
-    }, [geminiService]);
+    }, [activeProvider, providers]);
+
+    const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedProviderId(e.target.value);
+    };
 
     const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newModel = e.target.value;
         setSelectedModel(newModel);
-        localStorage.setItem('gemini-assistant-last-model', newModel);
+        if (activeProvider) {
+            localStorage.setItem(`gemini-assistant-last-model-${activeProvider.id}`, newModel);
+        }
     };
 
     const clearChat = () => {
@@ -91,6 +118,11 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
         const input = mode === 'obsidian' ? obsidianInput : webInput;
         if (!input.trim() && attachments.length === 0) return;
 
+        if (!activeProvider) {
+            new Notice('No AI provider selected');
+            return;
+        }
+
         const userMsg: Message = {
             role: 'user',
             text: input + (attachments.length > 0 ? `\n[Attached ${attachments.length} file(s)]` : '')
@@ -119,10 +151,15 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
         const selectedGem = mode === 'obsidian' ? selectedGemObsidian : selectedGemWeb;
         if (selectedGem) {
             try {
-                const gemContent = await geminiService.readGem(selectedGem);
-                const gemContext = `\n\nAdditional Context from Gem (${selectedGem.split('/').pop()}):\n${gemContent}`;
-                context = context ? context + gemContext : gemContext;
-                new Notice('Included Gem content');
+                // Use Gemini provider for reading gems as it has the vault logic
+                const geminiProvider = providers.find(p => p.id === 'gemini');
+                if (geminiProvider) {
+                    // @ts-ignore
+                    const gemContent = await geminiProvider.readGem(selectedGem);
+                    const gemContext = `\n\nAdditional Context from Gem (${selectedGem.split('/').pop()}):\n${gemContent}`;
+                    context = context ? context + gemContext : gemContext;
+                    new Notice('Included Gem content');
+                }
             } catch (e) {
                 console.error('Failed to read Gem', e);
                 new Notice('Failed to read selected Gem');
@@ -130,7 +167,7 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
         }
 
         try {
-            const response = await geminiService.chat(
+            const response = await activeProvider.chat(
                 input,
                 history,
                 context,
@@ -203,6 +240,16 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
             <div className="gemini-header">
                 <h2>Gemini Assistant</h2>
                 <div className="gemini-header-controls">
+                    <select
+                        value={selectedProviderId}
+                        onChange={handleProviderChange}
+                        className="gemini-model-select"
+                        style={{ maxWidth: '80px' }}
+                    >
+                        {providers.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
                     <select
                         value={selectedModel}
                         onChange={handleModelChange}
@@ -301,7 +348,7 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
                             value={obsidianInput}
                             onChange={(e) => setObsidianInput(e.target.value)}
                             onPaste={handlePaste}
-                            placeholder="Ask Gemini Obsidian..."
+                            placeholder={`Ask ${activeProvider?.name} Obsidian...`}
                             className="gemini-input obsidian"
                         />
                         <button type="submit" className="gemini-send-btn obsidian">
@@ -371,7 +418,7 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getAc
                             value={webInput}
                             onChange={(e) => setWebInput(e.target.value)}
                             onPaste={handlePaste}
-                            placeholder="Ask Gemini Web..."
+                            placeholder={`Ask ${activeProvider?.name} Web...`}
                             className="gemini-input web"
                         />
                         <button type="submit" className="gemini-send-btn web">
