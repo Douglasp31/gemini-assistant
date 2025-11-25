@@ -13,19 +13,18 @@ export default class GeminiPlugin extends Plugin {
 
     async onload() {
         console.log('Loading Gemini Assistant Plugin');
-        new Notice('Gemini Plugin v1.0.15 Loaded');
+        new Notice('Gemini Plugin v1.0.24 Loaded');
 
         this.geminiService = new GeminiService(this.app);
 
-        // Initialize GitService with the plugin's absolute path
-        // @ts-ignore - basePath is not in the public definition but exists on FileSystemAdapter
-        const basePath = (this.app.vault.adapter as any).basePath;
-        const pluginPath = `${basePath}/${this.manifest.dir}`;
+        // Initialize GitService
+        // Use the source directory which is a git repo, not the installed directory
+        const pluginPath = '/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant';
         this.gitService = new GitService(pluginPath);
 
         this.registerView(
             VIEW_TYPE_GEMINI,
-            (leaf) => new GeminiView(leaf, this.geminiService)
+            (leaf) => new GeminiView(leaf, this.geminiService, this.gitService)
         );
 
         this.addRibbonIcon('bot', 'Open Gemini Assistant', () => {
@@ -75,10 +74,12 @@ export default class GeminiPlugin extends Plugin {
 class GeminiView extends ItemView {
     root: ReactDOM.Root | null = null;
     geminiService: GeminiService;
+    gitService: GitService;
 
-    constructor(leaf: WorkspaceLeaf, geminiService: GeminiService) {
+    constructor(leaf: WorkspaceLeaf, geminiService: GeminiService, gitService: GitService) {
         super(leaf);
         this.geminiService = geminiService;
+        this.gitService = gitService;
     }
 
     getViewType() {
@@ -99,6 +100,7 @@ class GeminiView extends ItemView {
         this.root.render(
             React.createElement(AIChat, {
                 geminiService: this.geminiService,
+                gitService: this.gitService,
                 getActiveFileContent: async () => {
                     const activeFile = this.app.workspace.getActiveFile();
                     if (activeFile) {

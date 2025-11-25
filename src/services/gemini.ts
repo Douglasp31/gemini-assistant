@@ -319,43 +319,4 @@ export class GeminiService {
     async readGem(path: string): Promise<string> {
         return await this.vaultService.readFile(path);
     }
-
-    async syncPlugin() {
-        new Notice('Syncing plugin code...');
-        const { exec } = require('child_process');
-        const pluginDir = (this.app.vault.adapter as any).basePath + '/.obsidian/plugins/gemini-assistant';
-
-        // We need to sync the DEVELOPMENT directory, not the installed one, usually.
-        // But the user asked to "Sync Plugin Code".
-        // Assuming the user wants to sync the repo where the code lives.
-        // Based on previous context, the user is working in "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant"
-        // But the plugin runs from .obsidian/plugins/gemini-assistant.
-        // If the user wants to sync the *source* code, we should target the source directory.
-        // However, from within the plugin, we might not know where the source is if it's separate.
-        // Given the user's setup [URI] -> [CorpusName]: /Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant -> Douglasp31/gemini-assistant
-        // It seems the source IS the vault or a folder in it?
-        // Wait, the CWD for my tools has been "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant".
-        // So I should try to sync THAT directory.
-
-        const sourceDir = '/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant';
-
-        const commands = [
-            `cd "${sourceDir}"`,
-            'git add .',
-            '(git commit -m "Sync from Obsidian" || true)',
-            'git pull --no-rebase',
-            'git push'
-        ].join(' && ');
-
-        exec(commands, (error: any, stdout: any, stderr: any) => {
-            if (error) {
-                console.error(`exec error: ${error}`);
-                new Notice(`Sync failed: ${error.message}`);
-                return;
-            }
-            console.log(`stdout: ${stdout}`);
-            console.error(`stderr: ${stderr}`);
-            new Notice('Plugin code synced successfully!');
-        });
-    }
 }

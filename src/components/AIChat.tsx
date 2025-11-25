@@ -1,11 +1,11 @@
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { GeminiService } from '../services/gemini';
-import { Notice } from 'obsidian';
-import { Copy, Send, Globe, Trash2, RefreshCw } from 'lucide-react';
+import { GitService } from '../services/git';
 
 interface AIChatProps {
     geminiService: GeminiService;
+    gitService: GitService;
     getActiveFileContent: () => Promise<string | null>;
 }
 
@@ -14,8 +14,12 @@ interface Message {
     text?: string;
     isThinking?: boolean;
 }
+import { Notice } from 'obsidian';
+import { Copy, Send, Globe, Trash2, RefreshCw } from 'lucide-react';
 
-export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileContent }) => {
+
+
+export const AIChat: React.FC<AIChatProps> = ({ geminiService, gitService, getActiveFileContent }) => {
     const [messages, setMessages] = React.useState<Message[]>([]);
     const [obsidianInput, setObsidianInput] = React.useState('');
     const [webInput, setWebInput] = React.useState('');
@@ -164,7 +168,7 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
                         <Trash2 size={16} />
                     </button>
                     <button
-                        onClick={() => geminiService.syncPlugin()}
+                        onClick={() => gitService.sync()}
                         className="gemini-header-btn"
                         title="Sync Plugin Code"
                     >
