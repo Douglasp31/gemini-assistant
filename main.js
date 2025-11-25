@@ -35164,27 +35164,17 @@ var GitService = class {
   async sync() {
     new import_obsidian4.Notice("Starting Git Sync...");
     try {
-      const fs = require("fs");
-      let credentialHelper = "osxkeychain";
-      const xcodePath = "/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core/git-credential-osxkeychain";
-      if (fs.existsSync(xcodePath)) {
-        credentialHelper = xcodePath;
-      }
       await this.runCommand("git", ["add", "."]);
       try {
         await this.runCommand("git", ["commit", "-m", "Sync from Obsidian"]);
       } catch (e) {
       }
-      await this.runCommand("git", ["-c", `credential.helper=${credentialHelper}`, "pull", "--no-rebase"]);
-      await this.runCommand("git", ["-c", `credential.helper=${credentialHelper}`, "push"]);
+      await this.runCommand("git", ["pull", "--no-rebase"]);
+      await this.runCommand("git", ["push"]);
       new import_obsidian4.Notice("Git Sync Complete!");
     } catch (error) {
       console.error("Git Sync Failed:", error);
-      if (error.message.includes("Device not configured") || error.message.includes("could not read Username")) {
-        new import_obsidian4.Notice('Authentication failed. Please run "git pull" in your terminal to log in.');
-      } else {
-        new import_obsidian4.Notice(`Git Sync Failed: ${error.message}`);
-      }
+      new import_obsidian4.Notice(`Git Sync Failed: ${error.message}`);
     }
   }
   async runCommand(cmd, args) {
@@ -35250,7 +35240,7 @@ var VIEW_TYPE_GEMINI = "gemini-view";
 var GeminiPlugin = class extends import_obsidian5.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian5.Notice("Gemini Plugin v1.0.24 Loaded");
+    new import_obsidian5.Notice("Gemini Plugin v1.0.25 Loaded");
     this.geminiService = new GeminiService(this.app);
     const pluginPath = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
     this.gitService = new GitService(pluginPath);

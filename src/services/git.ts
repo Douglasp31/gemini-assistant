@@ -12,14 +12,6 @@ export class GitService {
         new Notice('Starting Git Sync...');
 
         try {
-            // Determine credential helper path
-            const fs = require('fs');
-            let credentialHelper = 'osxkeychain'; // Default fallback
-            const xcodePath = '/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core/git-credential-osxkeychain';
-            if (fs.existsSync(xcodePath)) {
-                credentialHelper = xcodePath;
-            }
-
             // 1. Add all changes
             await this.runCommand('git', ['add', '.']);
 
@@ -30,20 +22,16 @@ export class GitService {
                 // Ignore empty commit error
             }
 
-            // 3. Pull (no rebase, force absolute credential helper)
-            await this.runCommand('git', ['-c', `credential.helper=${credentialHelper}`, 'pull', '--no-rebase']);
+            // 3. Pull (no rebase)
+            await this.runCommand('git', ['pull', '--no-rebase']);
 
-            // 4. Push (force absolute credential helper)
-            await this.runCommand('git', ['-c', `credential.helper=${credentialHelper}`, 'push']);
+            // 4. Push
+            await this.runCommand('git', ['push']);
 
             new Notice('Git Sync Complete!');
         } catch (error: any) {
             console.error('Git Sync Failed:', error);
-            if (error.message.includes('Device not configured') || error.message.includes('could not read Username')) {
-                new Notice('Authentication failed. Please run "git pull" in your terminal to log in.');
-            } else {
-                new Notice(`Git Sync Failed: ${error.message}`);
-            }
+            new Notice(`Git Sync Failed: ${error.message}`);
         }
     }
 
