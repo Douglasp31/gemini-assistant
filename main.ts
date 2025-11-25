@@ -3,17 +3,25 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { AIChat } from './src/components/AIChat';
 import { GeminiService } from './src/services/gemini';
+import { GitService } from './src/services/git';
 
 const VIEW_TYPE_GEMINI = "gemini-view";
 
 export default class GeminiPlugin extends Plugin {
     private geminiService: GeminiService;
+    private gitService: GitService;
 
     async onload() {
         console.log('Loading Gemini Assistant Plugin');
         new Notice('Gemini Plugin v1.0.1 Loaded');
 
         this.geminiService = new GeminiService(this.app);
+
+        // Initialize GitService with the plugin's absolute path
+        // @ts-ignore - basePath is not in the public definition but exists on FileSystemAdapter
+        const basePath = (this.app.vault.adapter as any).basePath;
+        const pluginPath = `${basePath}/${this.manifest.dir}`;
+        this.gitService = new GitService(pluginPath);
 
         this.registerView(
             VIEW_TYPE_GEMINI,
@@ -22,6 +30,20 @@ export default class GeminiPlugin extends Plugin {
 
         this.addRibbonIcon('bot', 'Open Gemini Assistant', () => {
             this.activateView();
+        });
+
+        // Add Git Sync Ribbon Icon
+        this.addRibbonIcon('github', 'Sync Plugin Code', async () => {
+            await this.gitService.sync();
+        });
+
+        // Add Git Sync Command
+        this.addCommand({
+            id: 'sync-plugin-code',
+            name: 'Sync Plugin Code (Git)',
+            callback: async () => {
+                await this.gitService.sync();
+            }
         });
     }
 

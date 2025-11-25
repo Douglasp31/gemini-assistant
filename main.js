@@ -24815,7 +24815,7 @@ __export(main_exports, {
   default: () => GeminiPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian4 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 var React4 = __toESM(require_react());
 var ReactDOM = __toESM(require_client());
 
@@ -35118,19 +35118,112 @@ User Request: ${prompt}`;
   }
 };
 
+// src/services/git.ts
+var import_obsidian4 = require("obsidian");
+var GitService = class {
+  constructor(pluginPath) {
+    this.pluginPath = pluginPath;
+  }
+  async sync() {
+    new import_obsidian4.Notice("Starting Git Sync...");
+    try {
+      await this.runCommand("git", ["pull", "origin", "main"]);
+      new import_obsidian4.Notice("Git Pull Complete");
+      const status = await this.runCommand("git", ["status", "--porcelain"]);
+      if (status.trim()) {
+        await this.runCommand("git", ["add", "."]);
+        await this.runCommand("git", ["commit", "-m", "Auto-sync from Obsidian"]);
+        await this.runCommand("git", ["push", "origin", "main"]);
+        new import_obsidian4.Notice("Git Push Complete: Code synced to GitHub");
+      } else {
+        new import_obsidian4.Notice("No local changes to push.");
+      }
+    } catch (error) {
+      console.error("Git Sync Failed:", error);
+      new import_obsidian4.Notice(`Git Sync Failed: ${error.message}`);
+    }
+  }
+  async runCommand(cmd, args) {
+    const { spawn } = require("child_process");
+    const fs = require("fs");
+    return new Promise((resolve, reject) => {
+      let commandToRun = cmd;
+      if (cmd === "git") {
+        const possiblePaths = [
+          "/usr/bin/git",
+          "/usr/local/bin/git",
+          "/opt/homebrew/bin/git",
+          "/bin/git"
+        ];
+        for (const p of possiblePaths) {
+          if (fs.existsSync(p)) {
+            commandToRun = p;
+            break;
+          }
+        }
+      }
+      console.log(`[GitService] Spawning: ${commandToRun} with args: ${args.join(" ")} in ${this.pluginPath}`);
+      const env = Object.assign({}, process.env);
+      if (process.platform === "darwin") {
+        env.PATH = `${env.PATH}:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin`;
+      }
+      const child = spawn(commandToRun, args, {
+        cwd: this.pluginPath,
+        env,
+        shell: false
+      });
+      let stdout = "";
+      let stderr = "";
+      child.stdout.on("data", (data) => {
+        stdout += data.toString();
+      });
+      child.stderr.on("data", (data) => {
+        stderr += data.toString();
+      });
+      child.on("error", (error) => {
+        console.error(`[GitService] Spawn Error: ${error.message}`);
+        reject(error);
+      });
+      child.on("close", (code2) => {
+        if (code2 !== 0) {
+          console.error(`[GitService] Process exited with code ${code2}`);
+          console.error(`[GitService] Stderr: ${stderr}`);
+          reject(new Error(`Command failed with code ${code2}: ${stderr}`));
+        } else {
+          console.log(`[GitService] Stdout: ${stdout}`);
+          resolve(stdout);
+        }
+      });
+    });
+  }
+};
+
 // main.ts
 var VIEW_TYPE_GEMINI = "gemini-view";
-var GeminiPlugin = class extends import_obsidian4.Plugin {
+var GeminiPlugin = class extends import_obsidian5.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian4.Notice("Gemini Plugin v1.0.1 Loaded");
+    new import_obsidian5.Notice("Gemini Plugin v1.0.1 Loaded");
     this.geminiService = new GeminiService(this.app);
+    const basePath = this.app.vault.adapter.basePath;
+    const pluginPath = `${basePath}/${this.manifest.dir}`;
+    this.gitService = new GitService(pluginPath);
     this.registerView(
       VIEW_TYPE_GEMINI,
       (leaf) => new GeminiView(leaf, this.geminiService)
     );
     this.addRibbonIcon("bot", "Open Gemini Assistant", () => {
       this.activateView();
+    });
+    this.addRibbonIcon("github", "Sync Plugin Code", async () => {
+      await this.gitService.sync();
+    });
+    this.addCommand({
+      id: "sync-plugin-code",
+      name: "Sync Plugin Code (Git)",
+      callback: async () => {
+        await this.gitService.sync();
+      }
     });
   }
   async onunload() {
@@ -35149,7 +35242,7 @@ var GeminiPlugin = class extends import_obsidian4.Plugin {
     workspace.revealLeaf(leaf);
   }
 };
-var GeminiView = class extends import_obsidian4.ItemView {
+var GeminiView = class extends import_obsidian5.ItemView {
   constructor(leaf, geminiService) {
     super(leaf);
     this.root = null;
