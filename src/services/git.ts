@@ -77,10 +77,6 @@ export class GitService {
 
             if (process.platform === 'darwin') {
                 env.PATH = `${env.PATH}:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin`;
-                // Add path to git-credential-osxkeychain
-                env.PATH += ':/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core';
-                env.PATH += ':/Library/Developer/CommandLineTools/usr/libexec/git-core';
-                env.PATH += ':/usr/libexec/git-core';
             }
 
             const child = spawn(commandToRun, args, {

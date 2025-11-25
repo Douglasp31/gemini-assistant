@@ -35309,9 +35309,6 @@ var GitService = class {
       const env = Object.assign({}, process.env);
       if (process.platform === "darwin") {
         env.PATH = `${env.PATH}:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin`;
-        env.PATH += ":/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core";
-        env.PATH += ":/Library/Developer/CommandLineTools/usr/libexec/git-core";
-        env.PATH += ":/usr/libexec/git-core";
       }
       const child = spawn(commandToRun, args, {
         cwd: this.pluginPath,
@@ -35349,7 +35346,7 @@ var VIEW_TYPE_GEMINI = "gemini-view";
 var GeminiPlugin = class extends import_obsidian5.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian5.Notice("Gemini Plugin v1.0.35 Loaded");
+    new import_obsidian5.Notice("Gemini Plugin v1.0.36 Loaded");
     this.geminiService = new GeminiService(this.app);
     const pluginPath = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
     this.gitService = new GitService(pluginPath);
