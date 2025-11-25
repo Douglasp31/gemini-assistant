@@ -319,34 +319,4 @@ export class GeminiService {
     async readGem(path: string): Promise<string> {
         return await this.vaultService.readFile(path);
     }
-
-    async syncPlugin() {
-        new Notice('Syncing plugin code...');
-        const { exec } = require('child_process');
-
-        const sourceDir = '/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant';
-
-        // Add path to credential helper and common git locations
-        const pathFix = 'export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core';
-
-        const commands = [
-            pathFix,
-            `cd "${sourceDir}"`,
-            'git add .',
-            '(git commit -m "Sync from Obsidian" || true)',
-            'git pull --no-rebase',
-            'git push'
-        ].join(' && ');
-
-        exec(commands, (error: any, stdout: any, stderr: any) => {
-            if (error) {
-                console.error(`exec error: ${error}`);
-                new Notice(`Sync failed: ${error.message}`);
-                return;
-            }
-            console.log(`stdout: ${stdout}`);
-            console.error(`stderr: ${stderr}`);
-            new Notice('Plugin code synced successfully!');
-        });
-    }
 }
