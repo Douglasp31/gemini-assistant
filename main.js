@@ -35259,20 +35259,31 @@ var GitService = class {
   async sync() {
     new import_obsidian4.Notice("Starting Git Sync...");
     try {
-      await this.runCommand("git", ["pull", "origin", "main"]);
-      new import_obsidian4.Notice("Git Pull Complete");
+      try {
+        await this.runCommand("git", ["pull", "origin", "main"]);
+        new import_obsidian4.Notice("Git Pull Complete");
+      } catch (e) {
+        console.warn("Pull failed (might be offline or conflict), continuing...", e);
+      }
       const status = await this.runCommand("git", ["status", "--porcelain"]);
       if (status.trim()) {
         await this.runCommand("git", ["add", "."]);
-        await this.runCommand("git", ["commit", "-m", "Auto-sync from Obsidian"]);
-        await this.runCommand("git", ["push", "origin", "main"]);
-        new import_obsidian4.Notice("Git Push Complete: Code synced to GitHub");
-      } else {
-        new import_obsidian4.Notice("No local changes to push.");
+        try {
+          await this.runCommand("git", ["commit", "-m", "Auto-sync from Obsidian"]);
+          new import_obsidian4.Notice("Committed changes.");
+        } catch (e) {
+          console.warn("Commit failed", e);
+        }
       }
+      await this.runCommand("git", ["push", "origin", "main"]);
+      new import_obsidian4.Notice("Git Push Complete: Code synced to GitHub");
     } catch (error) {
       console.error("Git Sync Failed:", error);
-      new import_obsidian4.Notice(`Git Sync Failed: ${error.message}`);
+      if (error.message.includes("Device not configured")) {
+        new import_obsidian4.Notice("Git Sync Failed: Auth error. Please ensure git-credential-osxkeychain is configured.");
+      } else {
+        new import_obsidian4.Notice(`Git Sync Failed: ${error.message}`);
+      }
     }
   }
   async runCommand(cmd, args) {
@@ -35338,7 +35349,7 @@ var VIEW_TYPE_GEMINI = "gemini-view";
 var GeminiPlugin = class extends import_obsidian5.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian5.Notice("Gemini Plugin v1.0.33 Loaded");
+    new import_obsidian5.Notice("Gemini Plugin v1.0.35 Loaded");
     this.geminiService = new GeminiService(this.app);
     const pluginPath = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
     this.gitService = new GitService(pluginPath);
