@@ -20,9 +20,10 @@ export default class GeminiPlugin extends Plugin {
         this.geminiService = new GeminiService(this.app);
         this.anthropicService = new AnthropicService(this.app);
 
-        // Initialize GitService
-        // Use the source directory which is a git repo, not the installed directory
-        const pluginPath = '/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant';
+        // Initialize GitService with the plugin's absolute path
+        // @ts-ignore - basePath is not in the public definition but exists on FileSystemAdapter
+        const basePath = (this.app.vault.adapter as any).basePath;
+        const pluginPath = `${basePath}/${this.manifest.dir}`;
         this.gitService = new GitService(pluginPath);
 
         this.registerView(

@@ -33723,18 +33723,6 @@ ${gemContent}`;
     navigator.clipboard.writeText(text4);
     new import_obsidian.Notice("Copied to clipboard");
   };
-<<<<<<< HEAD
-  const copyAllChat = async () => {
-    const chatHistory = messages.map((msg) => {
-      const role = msg.role === "user" ? "User" : "Gemini";
-      return `**${role}:**
-${msg.text}
-
-`;
-    }).join("---\n\n");
-    await navigator.clipboard.writeText(chatHistory);
-    new import_obsidian.Notice("Chat history copied to clipboard");
-=======
   const copyAll = () => {
     const allText = messages.map((m) => `**${m.role === "user" ? "User" : "Gemini"}**: ${m.text}`).join("\n\n");
     navigator.clipboard.writeText(allText);
@@ -33764,7 +33752,6 @@ ${msg.text}
         }
       }
     }
->>>>>>> 26a3edf3177a3ff86088cace6fc4d276f8f39ece
   };
   return /* @__PURE__ */ React3.createElement("div", { className: "gemini-assistant-container" }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-header" }, /* @__PURE__ */ React3.createElement("h2", null, "Gemini Assistant"), /* @__PURE__ */ React3.createElement("div", { className: "gemini-header-controls" }, /* @__PURE__ */ React3.createElement(
     "select",
@@ -40197,40 +40184,28 @@ var GitService = class {
   async sync() {
     new import_obsidian5.Notice("Starting Git Sync...");
     try {
-<<<<<<< HEAD
-      const status = await this.runCommand("git", ["status", "--porcelain"]);
-      if (status.trim()) {
-        await this.runCommand("git", ["add", "."]);
-        await this.runCommand("git", ["commit", "-m", "Auto-sync from Obsidian"]);
-        new import_obsidian4.Notice("Local changes committed.");
-      }
-      await this.runCommand("git", ["pull", "origin", "main", "--no-rebase"]);
-      new import_obsidian4.Notice("Git Pull Complete");
-      await this.runCommand("git", ["push", "origin", "main"]);
-      new import_obsidian4.Notice("Git Push Complete: Code synced to GitHub");
-=======
-      try {
-        await this.runCommand("git", ["pull", "origin", "main"]);
-        new import_obsidian5.Notice("Git Pull Complete");
-      } catch (e) {
-        console.warn("Pull failed (might be offline or conflict), continuing...", e);
-      }
       const status = await this.runCommand("git", ["status", "--porcelain"]);
       if (status.trim()) {
         await this.runCommand("git", ["add", "."]);
         try {
           await this.runCommand("git", ["commit", "-m", "Auto-sync from Obsidian"]);
-          new import_obsidian5.Notice("Committed changes.");
+          new import_obsidian5.Notice("Local changes committed.");
         } catch (e) {
           console.warn("Commit failed", e);
         }
       }
+      try {
+        await this.runCommand("git", ["pull", "origin", "main", "--no-rebase"]);
+        new import_obsidian5.Notice("Git Pull Complete");
+      } catch (e) {
+        console.warn("Pull failed (might be offline or conflict), continuing...", e);
+        throw e;
+      }
       await this.runCommand("git", ["push", "origin", "main"]);
       new import_obsidian5.Notice("Git Push Complete: Code synced to GitHub");
->>>>>>> 26a3edf3177a3ff86088cace6fc4d276f8f39ece
     } catch (error) {
       console.error("Git Sync Failed:", error);
-      if (error.message.includes("Device not configured")) {
+      if (error.message && error.message.includes("Device not configured")) {
         new import_obsidian5.Notice("Git Sync Failed: Auth error. Please ensure git-credential-osxkeychain is configured.");
       } else {
         new import_obsidian5.Notice(`Git Sync Failed: ${error.message}`);
@@ -40300,7 +40275,8 @@ var GeminiPlugin = class extends import_obsidian6.Plugin {
     new import_obsidian6.Notice("Gemini Plugin v1.0.44 Loaded");
     this.geminiService = new GeminiService(this.app);
     this.anthropicService = new AnthropicService(this.app);
-    const pluginPath = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
+    const basePath = this.app.vault.adapter.basePath;
+    const pluginPath = `${basePath}/${this.manifest.dir}`;
     this.gitService = new GitService(pluginPath);
     this.registerView(
       VIEW_TYPE_GEMINI,

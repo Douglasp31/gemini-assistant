@@ -202,16 +202,6 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
         new Notice('Copied to clipboard');
     };
 
-<<<<<<< HEAD
-    const copyAllChat = async () => {
-        const chatHistory = messages.map(msg => {
-            const role = msg.role === 'user' ? 'User' : 'Gemini';
-            return `**${role}:**\n${msg.text}\n\n`;
-        }).join('---\n\n');
-
-        await navigator.clipboard.writeText(chatHistory);
-        new Notice('Chat history copied to clipboard');
-=======
     const copyAll = () => {
         const allText = messages
             .map(m => `**${m.role === 'user' ? 'User' : 'Gemini'}**: ${m.text}`)
@@ -243,7 +233,6 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
                 }
             }
         }
->>>>>>> 26a3edf3177a3ff86088cace6fc4d276f8f39ece
     };
 
     return (
