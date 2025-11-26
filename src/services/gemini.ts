@@ -166,6 +166,17 @@ export class GeminiService implements LLMProvider {
                                 },
                                 required: ['path', 'target', 'replacement']
                             }
+                        },
+                        {
+                            name: 'delete_note',
+                            description: 'Safely delete a note by moving it to the Trash folder.',
+                            parameters: {
+                                type: 'OBJECT',
+                                properties: {
+                                    path: { type: 'STRING', description: 'The path of the file to delete' }
+                                },
+                                required: ['path']
+                            }
                         }
                     ]
                 }
@@ -259,6 +270,8 @@ export class GeminiService implements LLMProvider {
                         toolResult = files.length > 0 ? files.join('\n') : 'No files found.';
                     } else if (name === 'replace_in_note') {
                         toolResult = await this.vaultService.replaceInNote(toolArgs.path, toolArgs.target, toolArgs.replacement);
+                    } else if (name === 'delete_note') {
+                        toolResult = await this.vaultService.deleteNote(toolArgs.path);
                     } else {
                         toolResult = `Unknown tool: ${name}`;
                     }

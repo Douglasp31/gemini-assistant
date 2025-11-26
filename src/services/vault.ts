@@ -98,4 +98,31 @@ export class VaultService {
         }
         throw new Error(`File not found: ${path}`);
     }
+
+    async deleteNote(path: string): Promise<string> {
+        const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+        if (!file) {
+            throw new Error(`File not found: ${path}`);
+        }
+
+        // Ensure Trash folder exists
+        const trashFolder = this.app.vault.getAbstractFileByPath('Trash');
+        if (!trashFolder) {
+            await this.app.vault.createFolder('Trash');
+        }
+
+        const fileName = file.name;
+        let newPath = `Trash/${fileName}`;
+
+        // Handle collisions
+        if (this.app.vault.getAbstractFileByPath(newPath)) {
+            const timestamp = new Date().getTime();
+            const ext = fileName.split('.').pop();
+            const name = fileName.replace(`.${ext}`, '');
+            newPath = `Trash/${name}_${timestamp}.${ext}`;
+        }
+
+        await this.app.fileManager.renameFile(file, newPath);
+        return `Successfully moved ${path} to ${newPath}`;
+    }
 }
