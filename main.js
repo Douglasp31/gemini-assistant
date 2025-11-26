@@ -33646,6 +33646,17 @@ ${gemContent}`;
     navigator.clipboard.writeText(text4);
     new import_obsidian.Notice("Copied to clipboard");
   };
+  const copyAllChat = async () => {
+    const chatHistory = messages.map((msg) => {
+      const role = msg.role === "user" ? "User" : "Gemini";
+      return `**${role}:**
+${msg.text}
+
+`;
+    }).join("---\n\n");
+    await navigator.clipboard.writeText(chatHistory);
+    new import_obsidian.Notice("Chat history copied to clipboard");
+  };
   return /* @__PURE__ */ React3.createElement("div", { className: "gemini-assistant-container" }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-header" }, /* @__PURE__ */ React3.createElement("h2", null, "Gemini Assistant"), /* @__PURE__ */ React3.createElement("div", { className: "gemini-header-controls" }, /* @__PURE__ */ React3.createElement(
     "select",
     {
@@ -35127,17 +35138,16 @@ var GitService = class {
   async sync() {
     new import_obsidian4.Notice("Starting Git Sync...");
     try {
-      await this.runCommand("git", ["pull", "origin", "main"]);
-      new import_obsidian4.Notice("Git Pull Complete");
       const status = await this.runCommand("git", ["status", "--porcelain"]);
       if (status.trim()) {
         await this.runCommand("git", ["add", "."]);
         await this.runCommand("git", ["commit", "-m", "Auto-sync from Obsidian"]);
-        await this.runCommand("git", ["push", "origin", "main"]);
-        new import_obsidian4.Notice("Git Push Complete: Code synced to GitHub");
-      } else {
-        new import_obsidian4.Notice("No local changes to push.");
+        new import_obsidian4.Notice("Local changes committed.");
       }
+      await this.runCommand("git", ["pull", "origin", "main"]);
+      new import_obsidian4.Notice("Git Pull Complete");
+      await this.runCommand("git", ["push", "origin", "main"]);
+      new import_obsidian4.Notice("Git Push Complete: Code synced to GitHub");
     } catch (error) {
       console.error("Git Sync Failed:", error);
       new import_obsidian4.Notice(`Git Sync Failed: ${error.message}`);

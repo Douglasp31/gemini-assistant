@@ -12,22 +12,23 @@ export class GitService {
         new Notice('Starting Git Sync...');
 
         try {
-            // 1. Pull first to avoid conflicts
-            await this.runCommand('git', ['pull', 'origin', 'main']);
-            new Notice('Git Pull Complete');
-
-            // 2. Check if there are changes to commit
+            // 1. Check for local changes and Commit them FIRST
             const status = await this.runCommand('git', ['status', '--porcelain']);
 
             if (status.trim()) {
-                // 3. Add, Commit, Push
                 await this.runCommand('git', ['add', '.']);
                 await this.runCommand('git', ['commit', '-m', 'Auto-sync from Obsidian']);
-                await this.runCommand('git', ['push', 'origin', 'main']);
-                new Notice('Git Push Complete: Code synced to GitHub');
-            } else {
-                new Notice('No local changes to push.');
+                new Notice('Local changes committed.');
             }
+
+            // 2. Pull remote changes (will merge if necessary)
+            await this.runCommand('git', ['pull', 'origin', 'main']);
+            new Notice('Git Pull Complete');
+
+            // 3. Push everything (local commits + merged changes)
+            await this.runCommand('git', ['push', 'origin', 'main']);
+            new Notice('Git Push Complete: Code synced to GitHub');
+
         } catch (error: any) {
             console.error('Git Sync Failed:', error);
             new Notice(`Git Sync Failed: ${error.message}`);

@@ -125,6 +125,16 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
         new Notice('Copied to clipboard');
     };
 
+    const copyAllChat = async () => {
+        const chatHistory = messages.map(msg => {
+            const role = msg.role === 'user' ? 'User' : 'Gemini';
+            return `**${role}:**\n${msg.text}\n\n`;
+        }).join('---\n\n');
+
+        await navigator.clipboard.writeText(chatHistory);
+        new Notice('Chat history copied to clipboard');
+    };
+
     return (
         <div className="gemini-assistant-container">
             <div className="gemini-header">
