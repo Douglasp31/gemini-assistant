@@ -35144,7 +35144,7 @@ var GitService = class {
         await this.runCommand("git", ["commit", "-m", "Auto-sync from Obsidian"]);
         new import_obsidian4.Notice("Local changes committed.");
       }
-      await this.runCommand("git", ["pull", "origin", "main"]);
+      await this.runCommand("git", ["pull", "origin", "main", "--no-rebase"]);
       new import_obsidian4.Notice("Git Pull Complete");
       await this.runCommand("git", ["push", "origin", "main"]);
       new import_obsidian4.Notice("Git Push Complete: Code synced to GitHub");

@@ -22,7 +22,8 @@ export class GitService {
             }
 
             // 2. Pull remote changes (will merge if necessary)
-            await this.runCommand('git', ['pull', 'origin', 'main']);
+            // Use --no-rebase to force a merge commit if branches have diverged
+            await this.runCommand('git', ['pull', 'origin', 'main', '--no-rebase']);
             new Notice('Git Pull Complete');
 
             // 3. Push everything (local commits + merged changes)
