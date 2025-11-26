@@ -1,11 +1,11 @@
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
-import { GeminiService } from '../services/gemini';
-import { Notice } from 'obsidian';
-import { Copy, Send, Globe, Trash2 } from 'lucide-react';
+import { LLMProvider } from '../interfaces/llm';
+import { GitService } from '../services/git';
 
 interface AIChatProps {
-    geminiService: GeminiService;
+    providers: LLMProvider[];
+    gitService: GitService;
     getActiveFileContent: () => Promise<string | null>;
 }
 
@@ -14,49 +14,119 @@ interface Message {
     text?: string;
     isThinking?: boolean;
 }
+import { Notice } from 'obsidian';
+import { Copy, Send, Globe, Trash2, RefreshCw, Paperclip, X } from 'lucide-react';
 
-export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileContent }) => {
+interface Attachment {
+    name: string;
+    data: string; // Base64
+    mimeType: string;
+}
+
+export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActiveFileContent }) => {
     const [messages, setMessages] = React.useState<Message[]>([]);
     const [obsidianInput, setObsidianInput] = React.useState('');
     const [webInput, setWebInput] = React.useState('');
     const [models, setModels] = React.useState<{ id: string, name: string }[]>([]);
-    const [selectedModel, setSelectedModel] = React.useState('gemini-1.5-flash');
+    const [selectedProviderId, setSelectedProviderId] = React.useState(providers[0]?.id || '');
+    const [selectedModel, setSelectedModel] = React.useState('');
     const [useActiveFile, setUseActiveFile] = React.useState(false);
     const [useActiveFileWeb, setUseActiveFileWeb] = React.useState(false);
     const [customCommands, setCustomCommands] = React.useState<{ label: string, prompt: string }[]>([]);
     const [gems, setGems] = React.useState<{ name: string, path: string }[]>([]);
     const [selectedGemObsidian, setSelectedGemObsidian] = React.useState('');
     const [selectedGemWeb, setSelectedGemWeb] = React.useState('');
+    const [attachments, setAttachments] = React.useState<Attachment[]>([]);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const activeProvider = providers.find(p => p.id === selectedProviderId) || providers[0];
 
     React.useEffect(() => {
-        geminiService.getModels().then(setModels);
-        geminiService.getCustomCommands().then(setCustomCommands);
-        geminiService.getGems().then(setGems);
+        if (activeProvider) {
+            activeProvider.getModels().then(ms => {
+                setModels(ms);
+                if (ms.length > 0) {
+                    // Try to restore saved model for this provider
+                    const savedModel = localStorage.getItem(`gemini-assistant-last-model-${activeProvider.id}`);
+                    if (savedModel && ms.find(m => m.id === savedModel)) {
+                        setSelectedModel(savedModel);
+                    } else {
+                        setSelectedModel(ms[0].id);
+                    }
+                }
+            });
 
-        // Load saved model preference
-        const savedModel = localStorage.getItem('gemini-assistant-last-model');
-        if (savedModel) {
-            setSelectedModel(savedModel);
+            // Load custom commands and gems (assuming these are shared or handled by the first provider for now, 
+            // or we could abstract this to a separate service. For now, we'll cast to any if needed or assume provider has these methods 
+            // but LLMProvider interface doesn't enforce them. 
+            // Let's assume GeminiService is the one handling Vault operations for now.
+            // We can find the Gemini provider to load these.
+            const geminiProvider = providers.find(p => p.id === 'gemini');
+            if (geminiProvider) {
+                // @ts-ignore
+                if (geminiProvider.getCustomCommands) geminiProvider.getCustomCommands().then(setCustomCommands);
+                // @ts-ignore
+                if (geminiProvider.getGems) geminiProvider.getGems().then(setGems);
+            }
         }
-    }, [geminiService]);
+    }, [activeProvider, providers]);
+
+    const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedProviderId(e.target.value);
+    };
 
     const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newModel = e.target.value;
         setSelectedModel(newModel);
-        localStorage.setItem('gemini-assistant-last-model', newModel);
+        if (activeProvider) {
+            localStorage.setItem(`gemini-assistant-last-model-${activeProvider.id}`, newModel);
+        }
     };
 
     const clearChat = () => {
         setMessages([]);
+        setAttachments([]);
         new Notice('Chat history cleared');
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (event.target?.result) {
+                    const base64 = (event.target.result as string).split(',')[1];
+                    setAttachments(prev => [...prev, {
+                        name: file.name,
+                        data: base64,
+                        mimeType: file.type
+                    }]);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+        // Reset input
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const removeAttachment = (index: number) => {
+        setAttachments(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e: React.FormEvent, mode: 'obsidian' | 'web') => {
         e.preventDefault();
         const input = mode === 'obsidian' ? obsidianInput : webInput;
-        if (!input.trim()) return;
+        if (!input.trim() && attachments.length === 0) return;
 
-        const userMsg: Message = { role: 'user', text: input };
+        if (!activeProvider) {
+            new Notice('No AI provider selected');
+            return;
+        }
+
+        const userMsg: Message = {
+            role: 'user',
+            text: input + (attachments.length > 0 ? `\n[Attached ${attachments.length} file(s)]` : '')
+        };
         setMessages(prev => [...prev, userMsg]);
 
         if (mode === 'obsidian') setObsidianInput('');
@@ -81,10 +151,15 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
         const selectedGem = mode === 'obsidian' ? selectedGemObsidian : selectedGemWeb;
         if (selectedGem) {
             try {
-                const gemContent = await geminiService.readGem(selectedGem);
-                const gemContext = `\n\nAdditional Context from Gem (${selectedGem.split('/').pop()}):\n${gemContent}`;
-                context = context ? context + gemContext : gemContext;
-                new Notice('Included Gem content');
+                // Use Gemini provider for reading gems as it has the vault logic
+                const geminiProvider = providers.find(p => p.id === 'gemini');
+                if (geminiProvider) {
+                    // @ts-ignore
+                    const gemContent = await geminiProvider.readGem(selectedGem);
+                    const gemContext = `\n\nAdditional Context from Gem (${selectedGem.split('/').pop()}):\n${gemContent}`;
+                    context = context ? context + gemContext : gemContext;
+                    new Notice('Included Gem content');
+                }
             } catch (e) {
                 console.error('Failed to read Gem', e);
                 new Notice('Failed to read selected Gem');
@@ -92,15 +167,16 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
         }
 
         try {
-            const response = await geminiService.chat(
-                userMsg.text!,
+            const response = await activeProvider.chat(
+                input,
                 history,
                 context,
                 selectedModel,
                 mode,
                 (toolMsg) => {
                     new Notice(toolMsg); // Show tool execution as toast
-                }
+                },
+                attachments
             );
 
             setMessages(prev => {
@@ -108,6 +184,7 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
                 newMsgs[newMsgs.length - 1] = { role: 'model', text: response };
                 return newMsgs;
             });
+            setAttachments([]); // Clear attachments after sending
         } catch (err: any) {
             setMessages(prev => {
                 const newMsgs = [...prev];
@@ -125,6 +202,7 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
         new Notice('Copied to clipboard');
     };
 
+<<<<<<< HEAD
     const copyAllChat = async () => {
         const chatHistory = messages.map(msg => {
             const role = msg.role === 'user' ? 'User' : 'Gemini';
@@ -133,6 +211,39 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
 
         await navigator.clipboard.writeText(chatHistory);
         new Notice('Chat history copied to clipboard');
+=======
+    const copyAll = () => {
+        const allText = messages
+            .map(m => `**${m.role === 'user' ? 'User' : 'Gemini'}**: ${m.text}`)
+            .join('\n\n');
+        navigator.clipboard.writeText(allText);
+        new Notice('Copied entire chat to clipboard');
+    };
+
+    const handlePaste = (e: React.ClipboardEvent) => {
+        const items = e.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                e.preventDefault();
+                const blob = items[i].getAsFile();
+                if (blob) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        if (event.target?.result) {
+                            const base64 = (event.target.result as string).split(',')[1];
+                            setAttachments(prev => [...prev, {
+                                name: 'Pasted Image ' + new Date().toLocaleTimeString(),
+                                data: base64,
+                                mimeType: blob.type
+                            }]);
+                            new Notice('Image pasted from clipboard');
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                }
+            }
+        }
+>>>>>>> 26a3edf3177a3ff86088cace6fc4d276f8f39ece
     };
 
     return (
@@ -140,6 +251,16 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
             <div className="gemini-header">
                 <h2>Gemini Assistant</h2>
                 <div className="gemini-header-controls">
+                    <select
+                        value={selectedProviderId}
+                        onChange={handleProviderChange}
+                        className="gemini-model-select"
+                        style={{ maxWidth: '80px' }}
+                    >
+                        {providers.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
                     <select
                         value={selectedModel}
                         onChange={handleModelChange}
@@ -150,12 +271,22 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
                         ))}
                     </select>
                     <button
+                        onClick={copyAll}
+                        className="gemini-header-btn"
+                        title="Copy Conversation"
+                        style={{ gap: '4px' }}
+                    >
+                        <Copy size={16} />
+                        <span style={{ fontSize: '0.75rem' }}>Copy</span>
+                    </button>
+                    <button
                         onClick={clearChat}
                         className="gemini-header-btn"
                         title="Clear Chat History"
                     >
                         <Trash2 size={16} />
                     </button>
+
                 </div>
             </div>
 
@@ -190,14 +321,45 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
             </div>
 
             <div className="gemini-inputs">
+                {/* Attachments Preview */}
+                {attachments.length > 0 && (
+                    <div className="gemini-attachments">
+                        {attachments.map((att, idx) => (
+                            <div key={idx} className="gemini-attachment-chip">
+                                <span className="text-xs truncate max-w-[100px]">{att.name}</span>
+                                <button onClick={() => removeAttachment(idx)} className="gemini-attachment-remove">
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={handleFileSelect}
+                    accept="image/*,application/pdf"
+                />
+
                 {/* Obsidian Chat Input */}
                 <form onSubmit={(e) => handleSubmit(e, 'obsidian')} className="gemini-input-form">
                     <div className="gemini-input-wrapper">
+                        <button
+                            type="button"
+                            className="gemini-attach-btn"
+                            onClick={() => fileInputRef.current?.click()}
+                            title="Attach Image or PDF"
+                        >
+                            <Paperclip size={16} />
+                        </button>
                         <input
                             type="text"
                             value={obsidianInput}
                             onChange={(e) => setObsidianInput(e.target.value)}
-                            placeholder="Ask Gemini Obsidian..."
+                            onPaste={handlePaste}
+                            placeholder={`Ask ${activeProvider?.name} Obsidian...`}
                             className="gemini-input obsidian"
                         />
                         <button type="submit" className="gemini-send-btn obsidian">
@@ -254,11 +416,20 @@ export const AIChat: React.FC<AIChatProps> = ({ geminiService, getActiveFileCont
                 {/* Web Chat Input */}
                 <form onSubmit={(e) => handleSubmit(e, 'web')} className="gemini-input-form">
                     <div className="gemini-input-wrapper">
+                        <button
+                            type="button"
+                            className="gemini-attach-btn"
+                            onClick={() => fileInputRef.current?.click()}
+                            title="Attach Image or PDF"
+                        >
+                            <Paperclip size={16} />
+                        </button>
                         <input
                             type="text"
                             value={webInput}
                             onChange={(e) => setWebInput(e.target.value)}
-                            placeholder="Ask Gemini Web..."
+                            onPaste={handlePaste}
+                            placeholder={`Ask ${activeProvider?.name} Web...`}
                             className="gemini-input web"
                         />
                         <button type="submit" className="gemini-send-btn web">

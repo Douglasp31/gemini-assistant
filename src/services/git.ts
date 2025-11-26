@@ -12,6 +12,7 @@ export class GitService {
         new Notice('Starting Git Sync...');
 
         try {
+<<<<<<< HEAD
             // 1. Check for local changes and Commit them FIRST
             const status = await this.runCommand('git', ['status', '--porcelain']);
 
@@ -27,12 +28,41 @@ export class GitService {
             new Notice('Git Pull Complete');
 
             // 3. Push everything (local commits + merged changes)
+=======
+            // 1. Pull first to avoid conflicts
+            try {
+                await this.runCommand('git', ['pull', 'origin', 'main']);
+                new Notice('Git Pull Complete');
+            } catch (e) {
+                console.warn('Pull failed (might be offline or conflict), continuing...', e);
+            }
+
+            // 2. Add and Commit any changes
+            const status = await this.runCommand('git', ['status', '--porcelain']);
+            if (status.trim()) {
+                await this.runCommand('git', ['add', '.']);
+                try {
+                    await this.runCommand('git', ['commit', '-m', 'Auto-sync from Obsidian']);
+                    new Notice('Committed changes.');
+                } catch (e) {
+                    // Should not happen if status was not empty, but safety first
+                    console.warn('Commit failed', e);
+                }
+            }
+
+            // 3. Push (Always try to push to ensure local commits go up)
+>>>>>>> 26a3edf3177a3ff86088cace6fc4d276f8f39ece
             await this.runCommand('git', ['push', 'origin', 'main']);
             new Notice('Git Push Complete: Code synced to GitHub');
 
         } catch (error: any) {
             console.error('Git Sync Failed:', error);
-            new Notice(`Git Sync Failed: ${error.message}`);
+            // Check for specific "Device not configured" error to give helpful hint
+            if (error.message.includes('Device not configured')) {
+                new Notice('Git Sync Failed: Auth error. Please ensure git-credential-osxkeychain is configured.');
+            } else {
+                new Notice(`Git Sync Failed: ${error.message}`);
+            }
         }
     }
 
@@ -62,6 +92,7 @@ export class GitService {
 
             // Fix PATH for Mac apps
             const env = Object.assign({}, process.env);
+
             if (process.platform === 'darwin') {
                 env.PATH = `${env.PATH}:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin`;
             }

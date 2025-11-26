@@ -2,7 +2,11 @@ import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { App, Notice, TFile } from 'obsidian';
 import { VaultService } from './vault';
 
-export class GeminiService {
+import { LLMProvider } from '../interfaces/llm';
+
+export class GeminiService implements LLMProvider {
+    id = 'gemini';
+    name = 'Google Gemini';
     private genAI: GoogleGenerativeAI | null = null;
     private vaultService: VaultService;
     private app: App;
@@ -66,7 +70,8 @@ export class GeminiService {
         context: string | null,
         modelName: string,
         mode: 'obsidian' | 'web',
-        onToolExecution?: (message: string) => void
+        onToolExecution?: (message: string) => void,
+        attachments: { name: string, data: string, mimeType: string }[] = []
     ): Promise<string> {
         if (!this.genAI) await this.initialize();
         if (!this.genAI) throw new Error('API Key not found');
@@ -186,19 +191,34 @@ export class GeminiService {
         // Add context to the first user message if provided
         if (context && chatHistory.length > 0 && chatHistory[0].role === 'user') {
             chatHistory[0].parts[0].text = `Context:\n${context}\n\nUser Request: ${chatHistory[0].parts[0].text}`;
-        } else if (context) {
-            // If no history, prepend context to the new prompt (handled below in sendMessage)
-            // Actually, startChat takes history. If history is empty, we just send prompt.
-            // If history exists, we use it.
         }
 
         const chat = model.startChat({
             history: chatHistory
         });
 
-        let finalPrompt = prompt;
+        let finalPrompt: string | (string | { inlineData: { mimeType: string, data: string } })[] = prompt;
+
         if (context && chatHistory.length === 0) {
             finalPrompt = `Context:\n${context}\n\nUser Request: ${prompt}`;
+        }
+
+        // Handle attachments
+        if (attachments && attachments.length > 0) {
+            const parts: any[] = [{ text: typeof finalPrompt === 'string' ? finalPrompt : '' }];
+            for (const att of attachments) {
+                parts.push({
+                    inlineData: {
+                        mimeType: att.mimeType,
+                        data: att.data
+                    }
+                });
+            }
+            // If we have attachments, finalPrompt becomes an array of parts
+            // But sendMessage expects string | Array<string | Part>
+            // We need to be careful. startChat history is text-only usually.
+            // Actually, sendMessage can take an array of parts.
+            finalPrompt = parts;
         }
 
         let result = await chat.sendMessage(finalPrompt);
@@ -265,12 +285,51 @@ export class GeminiService {
         }
 
         try {
-            const text = response.text();
-            console.log('Final text response:', text);
-            return text;
+            const candidate = response.candidates?.[0];
+            if (!candidate || !candidate.content || !candidate.content.parts) {
+                throw new Error('No content in response');
+            }
+
+            let finalOutput = '';
+
+            for (const part of candidate.content.parts) {
+                if (part.text) {
+                    finalOutput += part.text;
+                } else if (part.inlineData) {
+                    // Handle inline image data
+                    const mimeType = part.inlineData.mimeType;
+                    const data = part.inlineData.data;
+                    finalOutput += `\n![Generated Image](data:${mimeType};base64,${data})\n`;
+                } else if (part.executableCode) {
+                    finalOutput += `\n\`\`\`${part.executableCode.language}\n${part.executableCode.code}\n\`\`\`\n`;
+                } else if (part.codeExecutionResult) {
+                    finalOutput += `\nOutput:\n\`\`\`\n${part.codeExecutionResult.output}\n\`\`\`\n`;
+                }
+            }
+
+            if (!finalOutput) {
+                throw new Error('No text or image content in response');
+            }
+
+            console.log('Final processed response:', finalOutput);
+            return finalOutput;
+
         } catch (e) {
-            console.warn('No text in final response', e);
-            return '';
+            console.warn('Error processing response content', e);
+
+            // Check for safety blocks or other finish reasons
+            if (response.candidates && response.candidates.length > 0) {
+                const candidate = response.candidates[0];
+                if (candidate.finishReason === 'SAFETY') {
+                    return 'Response blocked by safety filters. Please try a different prompt.';
+                } else if (candidate.finishReason === 'RECITATION') {
+                    return 'Response blocked due to recitation check.';
+                } else if (candidate.finishReason === 'OTHER') {
+                    return 'Response blocked for unknown reasons (finishReason: OTHER).';
+                }
+            }
+
+            return 'Error: No response received from the model. It might be blocked or encountered an error.';
         }
     }
 
@@ -318,5 +377,35 @@ export class GeminiService {
 
     async readGem(path: string): Promise<string> {
         return await this.vaultService.readFile(path);
+    }
+
+    async syncPlugin() {
+        new Notice('Syncing plugin code...');
+        const { exec } = require('child_process');
+
+        const sourceDir = '/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant';
+
+        // Add path to credential helper and common git locations
+        const pathFix = 'export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core';
+
+        const commands = [
+            pathFix,
+            `cd "${sourceDir}"`,
+            'git add .',
+            '(git commit -m "Sync from Obsidian" || true)',
+            'git pull --no-rebase',
+            'git push'
+        ].join(' && ');
+
+        exec(commands, (error: any, stdout: any, stderr: any) => {
+            if (error) {
+                console.error(`exec error: ${error}`);
+                new Notice(`Sync failed: ${error.message}`);
+                return;
+            }
+            console.log(`stdout: ${stdout}`);
+            console.error(`stderr: ${stderr}`);
+            new Notice('Plugin code synced successfully!');
+        });
     }
 }
