@@ -58,7 +58,7 @@
     border: 1px solid var(--background-modifier-border);
     background-color: var(--background-primary);
     color: var(--text-normal);
-    max-width: 120px;
+    max-width: 180px;
 }
 
 /* Chat Area */

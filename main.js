@@ -33758,8 +33758,7 @@ ${gemContent}`;
     {
       value: selectedProviderId,
       onChange: handleProviderChange,
-      className: "gemini-model-select",
-      style: { maxWidth: "80px" }
+      className: "gemini-model-select"
     },
     providers.map((p) => /* @__PURE__ */ React3.createElement("option", { key: p.id, value: p.id }, p.name))
   ), /* @__PURE__ */ React3.createElement(
@@ -34999,26 +34998,6 @@ var VaultService = class {
     }
     throw new Error(`File not found: ${path3}`);
   }
-  async deleteNote(path3) {
-    const file = this.app.vault.getAbstractFileByPath((0, import_obsidian2.normalizePath)(path3));
-    if (!file) {
-      throw new Error(`File not found: ${path3}`);
-    }
-    const trashFolder = this.app.vault.getAbstractFileByPath("Trash");
-    if (!trashFolder) {
-      await this.app.vault.createFolder("Trash");
-    }
-    const fileName = file.name;
-    let newPath = `Trash/${fileName}`;
-    if (this.app.vault.getAbstractFileByPath(newPath)) {
-      const timestamp = new Date().getTime();
-      const ext = fileName.split(".").pop();
-      const name = fileName.replace(`.${ext}`, "");
-      newPath = `Trash/${name}_${timestamp}.${ext}`;
-    }
-    await this.app.fileManager.renameFile(file, newPath);
-    return `Successfully moved ${path3} to ${newPath}`;
-  }
 };
 
 // src/services/gemini.ts
@@ -35163,17 +35142,6 @@ var GeminiService = class {
                 },
                 required: ["path", "target", "replacement"]
               }
-            },
-            {
-              name: "delete_note",
-              description: "Safely delete a note by moving it to the Trash folder.",
-              parameters: {
-                type: "OBJECT",
-                properties: {
-                  path: { type: "STRING", description: "The path of the file to delete" }
-                },
-                required: ["path"]
-              }
             }
           ]
         }
@@ -35252,8 +35220,6 @@ User Request: ${prompt}`;
             toolResult = files.length > 0 ? files.join("\n") : "No files found.";
           } else if (name === "replace_in_note") {
             toolResult = await this.vaultService.replaceInNote(toolArgs.path, toolArgs.target, toolArgs.replacement);
-          } else if (name === "delete_note") {
-            toolResult = await this.vaultService.deleteNote(toolArgs.path);
           } else {
             toolResult = `Unknown tool: ${name}`;
           }
@@ -40305,7 +40271,7 @@ var VIEW_TYPE_GEMINI = "gemini-view";
 var GeminiPlugin = class extends import_obsidian6.Plugin {
   async onload() {
     console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian6.Notice("Gemini Plugin v1.0.44 Loaded");
+    new import_obsidian6.Notice("Gemini Plugin v1.0.45 Loaded");
     this.geminiService = new GeminiService(this.app);
     this.anthropicService = new AnthropicService(this.app);
     const basePath = this.app.vault.adapter.basePath;
