@@ -238,13 +238,13 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
     return (
         <div className="gemini-assistant-container">
             <div className="gemini-header">
-                <h2>Gemini Assistant</h2>
+                <h2>Stephen's AI Assistant</h2>
                 <div className="gemini-header-controls">
                     <select
                         value={selectedProviderId}
                         onChange={handleProviderChange}
                         className="gemini-model-select"
-                        style={{ maxWidth: '80px' }}
+                        style={{ minWidth: '110px' }}
                     >
                         {providers.map(p => (
                             <option key={p.id} value={p.id}>{p.name}</option>
@@ -343,13 +343,20 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
                         >
                             <Paperclip size={16} />
                         </button>
-                        <input
-                            type="text"
+                        <textarea
                             value={obsidianInput}
                             onChange={(e) => setObsidianInput(e.target.value)}
                             onPaste={handlePaste}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSubmit(e, 'obsidian');
+                                }
+                            }}
                             placeholder={`Ask ${activeProvider?.name} Obsidian...`}
                             className="gemini-input obsidian"
+                            rows={3}
+                            style={{ resize: 'vertical' }}
                         />
                         <button type="submit" className="gemini-send-btn obsidian">
                             <Send size={16} />
@@ -413,13 +420,20 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
                         >
                             <Paperclip size={16} />
                         </button>
-                        <input
-                            type="text"
+                        <textarea
                             value={webInput}
                             onChange={(e) => setWebInput(e.target.value)}
                             onPaste={handlePaste}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSubmit(e, 'web');
+                                }
+                            }}
                             placeholder={`Ask ${activeProvider?.name} Web...`}
                             className="gemini-input web"
+                            rows={3}
+                            style={{ resize: 'vertical' }}
                         />
                         <button type="submit" className="gemini-send-btn web">
                             <Globe size={16} />
