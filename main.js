@@ -33818,14 +33818,21 @@ ${gemContent}`;
     },
     /* @__PURE__ */ React3.createElement(Paperclip, { size: 16 })
   ), /* @__PURE__ */ React3.createElement(
-    "input",
+    "textarea",
     {
-      type: "text",
       value: obsidianInput,
       onChange: (e) => setObsidianInput(e.target.value),
       onPaste: handlePaste,
+      onKeyDown: (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          handleSubmit(e, "obsidian");
+        }
+      },
       placeholder: `Ask ${activeProvider == null ? void 0 : activeProvider.name} Obsidian...`,
-      className: "gemini-input obsidian"
+      className: "gemini-input obsidian",
+      rows: 3,
+      style: { resize: "vertical" }
     }
   ), /* @__PURE__ */ React3.createElement("button", { type: "submit", className: "gemini-send-btn obsidian" }, /* @__PURE__ */ React3.createElement(Send, { size: 16 }))), /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", gap: "10px", marginTop: "15px", marginBottom: "15px" } }, customCommands.length > 0 && /* @__PURE__ */ React3.createElement(
     "select",
@@ -33873,14 +33880,21 @@ ${gemContent}`;
     },
     /* @__PURE__ */ React3.createElement(Paperclip, { size: 16 })
   ), /* @__PURE__ */ React3.createElement(
-    "input",
+    "textarea",
     {
-      type: "text",
       value: webInput,
       onChange: (e) => setWebInput(e.target.value),
       onPaste: handlePaste,
+      onKeyDown: (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          handleSubmit(e, "web");
+        }
+      },
       placeholder: `Ask ${activeProvider == null ? void 0 : activeProvider.name} Web...`,
-      className: "gemini-input web"
+      className: "gemini-input web",
+      rows: 3,
+      style: { resize: "vertical" }
     }
   ), /* @__PURE__ */ React3.createElement("button", { type: "submit", className: "gemini-send-btn web" }, /* @__PURE__ */ React3.createElement(Globe, { size: 16 }))), gems.length > 0 && /* @__PURE__ */ React3.createElement("div", { style: { marginTop: "15px", marginBottom: "15px" } }, /* @__PURE__ */ React3.createElement(
     "select",
