@@ -24815,7 +24815,7 @@ __export(main_exports, {
   default: () => GeminiPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian6 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 var React4 = __toESM(require_react());
 var ReactDOM = __toESM(require_client());
 
@@ -33719,14 +33719,24 @@ ${gemContent}`;
       });
     }
   };
-  const copyToClipboard = (text4) => {
-    navigator.clipboard.writeText(text4);
-    new import_obsidian.Notice("Copied to clipboard");
+  const copyToClipboard = async (text4) => {
+    try {
+      await navigator.clipboard.writeText(text4);
+      new import_obsidian.Notice("Copied to clipboard");
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+      new import_obsidian.Notice("Failed to copy to clipboard");
+    }
   };
-  const copyAll = () => {
-    const allText = messages.map((m) => `**${m.role === "user" ? "User" : "Gemini"}**: ${m.text}`).join("\n\n");
-    navigator.clipboard.writeText(allText);
-    new import_obsidian.Notice("Copied entire chat to clipboard");
+  const copyAll = async () => {
+    const allText = messages.map((m) => `**${m.role === "user" ? "User" : "Assistant"}**: ${m.text}`).join("\n\n");
+    try {
+      await navigator.clipboard.writeText(allText);
+      new import_obsidian.Notice("Copied entire chat to clipboard");
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+      new import_obsidian.Notice("Failed to copy to clipboard");
+    }
   };
   const handlePaste = (e) => {
     const items = e.clipboardData.items;
@@ -33753,12 +33763,13 @@ ${gemContent}`;
       }
     }
   };
-  return /* @__PURE__ */ React3.createElement("div", { className: "gemini-assistant-container" }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-header" }, /* @__PURE__ */ React3.createElement("h2", null, "Gemini Assistant"), /* @__PURE__ */ React3.createElement("div", { className: "gemini-header-controls" }, /* @__PURE__ */ React3.createElement(
+  return /* @__PURE__ */ React3.createElement("div", { className: "gemini-assistant-container" }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-header" }, /* @__PURE__ */ React3.createElement("h2", null, "Stephen's AI Assistant"), /* @__PURE__ */ React3.createElement("div", { className: "gemini-header-controls" }, /* @__PURE__ */ React3.createElement(
     "select",
     {
       value: selectedProviderId,
       onChange: handleProviderChange,
-      className: "gemini-model-select"
+      className: "gemini-model-select",
+      style: { maxWidth: "80px" }
     },
     providers.map((p) => /* @__PURE__ */ React3.createElement("option", { key: p.id, value: p.id }, p.name))
   ), /* @__PURE__ */ React3.createElement(
@@ -34978,7 +34989,7 @@ var VaultService = class {
     const files = this.app.vault.getFiles();
     return files.filter((f) => f.name.toLowerCase().includes(name.toLowerCase())).map((f) => f.path);
   }
-  async replaceInNote(path3, target, replacement) {
+  async replaceInNote(path3, target, replacement, replaceAll = false) {
     const file = this.app.vault.getAbstractFileByPath((0, import_obsidian2.normalizePath)(path3));
     if (file instanceof import_obsidian2.TFile) {
       const content3 = await this.app.vault.read(file);
@@ -34992,9 +35003,10 @@ var VaultService = class {
       } else {
         return `Target string not found in ${path3}.`;
       }
-      const newContent = content3.replace(actualTarget, replacement);
+      const newContent = replaceAll ? content3.split(actualTarget).join(replacement) : content3.replace(actualTarget, replacement);
       await this.app.vault.modify(file, newContent);
-      return `Successfully replaced content in ${path3}`;
+      const count = replaceAll ? content3.split(actualTarget).length - 1 : 1;
+      return `Successfully replaced ${count} occurrence(s) in ${path3}`;
     }
     throw new Error(`File not found: ${path3}`);
   }
@@ -35007,20 +35019,27 @@ var GeminiService = class {
     this.name = "Google Gemini";
     this.genAI = null;
     this.apiKey = null;
+    this.initPromise = null;
     this.app = app;
     this.vaultService = new VaultService(app);
   }
   async initialize() {
+    if (this.initPromise)
+      return this.initPromise;
+    this.initPromise = this._doInitialize();
+    return this.initPromise;
+  }
+  async _doInitialize() {
     try {
       const keyFile = this.app.vault.getAbstractFileByPath("gemini_api_key.txt");
-      if (keyFile && "read" in this.app.vault) {
+      if (keyFile instanceof import_obsidian3.TFile) {
         const content3 = await this.app.vault.read(keyFile);
         this.apiKey = content3.trim();
         this.genAI = new GoogleGenerativeAI(this.apiKey);
         console.log("Gemini API Key loaded.");
       } else {
         console.warn("gemini_api_key.txt not found.");
-        new import_obsidian3.Notice("Gemini Assistant: Please create gemini_api_key.txt in your vault root.");
+        new import_obsidian3.Notice("Stephen's AI Assistant: Please create gemini_api_key.txt in your vault root.");
       }
     } catch (e) {
       console.error("Failed to load API key", e);
@@ -35032,7 +35051,12 @@ var GeminiService = class {
     if (!this.apiKey)
       return [];
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`);
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
+        method: "GET",
+        headers: {
+          "x-goog-api-key": this.apiKey
+        }
+      });
       if (!response.ok) {
         throw new Error(`Failed to fetch models: ${response.statusText}`);
       }
@@ -35044,8 +35068,9 @@ var GeminiService = class {
     } catch (e) {
       console.error("Error fetching models:", e);
       return [
-        { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
-        { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" }
+        { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
+        { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
+        { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" }
       ];
     }
   }
@@ -35330,30 +35355,6 @@ ${part.codeExecutionResult.output}
   }
   async readGem(path3) {
     return await this.vaultService.readFile(path3);
-  }
-  async syncPlugin() {
-    new import_obsidian3.Notice("Syncing plugin code...");
-    const { exec } = require("child_process");
-    const sourceDir = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
-    const pathFix = "export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core";
-    const commands = [
-      pathFix,
-      `cd "${sourceDir}"`,
-      "git add .",
-      '(git commit -m "Sync from Obsidian" || true)',
-      "git pull --no-rebase",
-      "git push"
-    ].join(" && ");
-    exec(commands, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`exec error: ${error}`);
-        new import_obsidian3.Notice(`Sync failed: ${error.message}`);
-        return;
-      }
-      console.log(`stdout: ${stdout}`);
-      console.error(`stderr: ${stderr}`);
-      new import_obsidian3.Notice("Plugin code synced successfully!");
-    });
   }
 };
 
@@ -39977,6 +39978,9 @@ Anthropic.Messages = Messages2;
 Anthropic.Models = Models2;
 Anthropic.Beta = Beta;
 
+// src/services/anthropic.ts
+var import_obsidian5 = require("obsidian");
+
 // src/services/tavily.ts
 var import_obsidian4 = require("obsidian");
 var TavilyService = class {
@@ -40051,13 +40055,20 @@ var AnthropicService = class {
     this.name = "Anthropic";
     this.anthropic = null;
     this.apiKey = null;
+    this.initPromise = null;
     this.app = app;
     this.tavilyService = new TavilyService(app);
   }
   async initialize() {
+    if (this.initPromise)
+      return this.initPromise;
+    this.initPromise = this._doInitialize();
+    return this.initPromise;
+  }
+  async _doInitialize() {
     try {
       const keyFile = this.app.vault.getAbstractFileByPath("anthropic_api_key.txt");
-      if (keyFile && "read" in this.app.vault) {
+      if (keyFile instanceof import_obsidian5.TFile) {
         const content3 = await this.app.vault.read(keyFile);
         this.apiKey = content3.trim();
         this.anthropic = new Anthropic({
@@ -40175,39 +40186,39 @@ User Request: ${prompt}`;
 };
 
 // src/services/git.ts
-var import_obsidian5 = require("obsidian");
+var import_obsidian6 = require("obsidian");
 var GitService = class {
   constructor(pluginPath) {
     this.pluginPath = pluginPath;
   }
   async sync() {
-    new import_obsidian5.Notice("Starting Git Sync...");
+    new import_obsidian6.Notice("Starting Git Sync...");
     try {
       const status = await this.runCommand("git", ["status", "--porcelain"]);
       if (status.trim()) {
         await this.runCommand("git", ["add", "."]);
         try {
           await this.runCommand("git", ["commit", "-m", "Auto-sync from Obsidian"]);
-          new import_obsidian5.Notice("Local changes committed.");
+          new import_obsidian6.Notice("Local changes committed.");
         } catch (e) {
           console.warn("Commit failed", e);
         }
       }
       try {
         await this.runCommand("git", ["pull", "origin", "main", "--no-rebase"]);
-        new import_obsidian5.Notice("Git Pull Complete");
+        new import_obsidian6.Notice("Git Pull Complete");
       } catch (e) {
         console.warn("Pull failed (might be offline or conflict), continuing...", e);
         throw e;
       }
       await this.runCommand("git", ["push", "origin", "main"]);
-      new import_obsidian5.Notice("Git Push Complete: Code synced to GitHub");
+      new import_obsidian6.Notice("Git Push Complete: Code synced to GitHub");
     } catch (error) {
       console.error("Git Sync Failed:", error);
       if (error.message && error.message.includes("Device not configured")) {
-        new import_obsidian5.Notice("Git Sync Failed: Auth error. Please ensure git-credential-osxkeychain is configured.");
+        new import_obsidian6.Notice("Git Sync Failed: Auth error. Please ensure git-credential-osxkeychain is configured.");
       } else {
-        new import_obsidian5.Notice(`Git Sync Failed: ${error.message}`);
+        new import_obsidian6.Notice(`Git Sync Failed: ${error.message}`);
       }
     }
   }
@@ -40268,10 +40279,10 @@ var GitService = class {
 
 // main.ts
 var VIEW_TYPE_GEMINI = "gemini-view";
-var GeminiPlugin = class extends import_obsidian6.Plugin {
+var GeminiPlugin = class extends import_obsidian7.Plugin {
   async onload() {
-    console.log("Loading Gemini Assistant Plugin");
-    new import_obsidian6.Notice("Gemini Plugin v1.0.45 Loaded");
+    console.log("Loading Stephen's AI Assistant Plugin");
+    new import_obsidian7.Notice(`Stephen's AI Assistant v${this.manifest.version} Loaded`);
     this.geminiService = new GeminiService(this.app);
     this.anthropicService = new AnthropicService(this.app);
     const basePath = this.app.vault.adapter.basePath;
@@ -40281,7 +40292,7 @@ var GeminiPlugin = class extends import_obsidian6.Plugin {
       VIEW_TYPE_GEMINI,
       (leaf) => new GeminiView(leaf, this.geminiService, this.anthropicService, this.gitService)
     );
-    this.addRibbonIcon("bot", "Open Gemini Assistant", () => {
+    this.addRibbonIcon("bot", "Open Stephen's AI Assistant", () => {
       this.activateView();
     });
     this.addRibbonIcon("github", "Sync Plugin Code", async () => {
@@ -40296,7 +40307,7 @@ var GeminiPlugin = class extends import_obsidian6.Plugin {
     });
   }
   async onunload() {
-    console.log("Unloading Gemini Assistant Plugin");
+    console.log("Unloading Stephen's AI Assistant Plugin");
   }
   async activateView() {
     const { workspace } = this.app;
@@ -40311,7 +40322,7 @@ var GeminiPlugin = class extends import_obsidian6.Plugin {
     workspace.revealLeaf(leaf);
   }
 };
-var GeminiView = class extends import_obsidian6.ItemView {
+var GeminiView = class extends import_obsidian7.ItemView {
   constructor(leaf, geminiService, anthropicService, gitService) {
     super(leaf);
     this.root = null;
@@ -40323,7 +40334,7 @@ var GeminiView = class extends import_obsidian6.ItemView {
     return VIEW_TYPE_GEMINI;
   }
   getDisplayText() {
-    return "Gemini Assistant";
+    return "Stephen's AI Assistant";
   }
   async onOpen() {
     const container = this.containerEl.children[1];
