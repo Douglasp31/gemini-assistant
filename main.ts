@@ -4,6 +4,7 @@ import * as ReactDOM from 'react-dom/client';
 import { AIChat } from './src/components/AIChat';
 import { GeminiService } from './src/services/gemini';
 import { AnthropicService } from './src/services/anthropic';
+import { ChatGPTService } from './src/services/chatgpt';
 import { GitService } from './src/services/git';
 
 const VIEW_TYPE_GEMINI = "gemini-view";
@@ -11,6 +12,7 @@ const VIEW_TYPE_GEMINI = "gemini-view";
 export default class GeminiPlugin extends Plugin {
     private geminiService: GeminiService;
     private anthropicService: AnthropicService;
+    private chatgptService: ChatGPTService;
     private gitService: GitService;
 
     async onload() {
@@ -19,6 +21,7 @@ export default class GeminiPlugin extends Plugin {
 
         this.geminiService = new GeminiService(this.app);
         this.anthropicService = new AnthropicService(this.app);
+        this.chatgptService = new ChatGPTService(this.app);
 
         // Initialize GitService with the plugin's absolute path
         // @ts-ignore - basePath is not in the public definition but exists on FileSystemAdapter
@@ -28,7 +31,7 @@ export default class GeminiPlugin extends Plugin {
 
         this.registerView(
             VIEW_TYPE_GEMINI,
-            (leaf) => new GeminiView(leaf, this.geminiService, this.anthropicService, this.gitService)
+            (leaf) => new GeminiView(leaf, this.geminiService, this.anthropicService, this.chatgptService, this.gitService)
         );
 
         this.addRibbonIcon('bot', 'Open Gemini Assistant', () => {
@@ -79,12 +82,14 @@ class GeminiView extends ItemView {
     root: ReactDOM.Root | null = null;
     geminiService: GeminiService;
     anthropicService: AnthropicService;
+    chatgptService: ChatGPTService;
     gitService: GitService;
 
-    constructor(leaf: WorkspaceLeaf, geminiService: GeminiService, anthropicService: AnthropicService, gitService: GitService) {
+    constructor(leaf: WorkspaceLeaf, geminiService: GeminiService, anthropicService: AnthropicService, chatgptService: ChatGPTService, gitService: GitService) {
         super(leaf);
         this.geminiService = geminiService;
         this.anthropicService = anthropicService;
+        this.chatgptService = chatgptService;
         this.gitService = gitService;
     }
 
@@ -105,7 +110,7 @@ class GeminiView extends ItemView {
         this.root = ReactDOM.createRoot(reactContainer);
         this.root.render(
             React.createElement(AIChat, {
-                providers: [this.geminiService, this.anthropicService],
+                providers: [this.geminiService, this.anthropicService, this.chatgptService],
                 gitService: this.gitService,
                 getActiveFileContent: async () => {
                     const activeFile = this.app.workspace.getActiveFile();
