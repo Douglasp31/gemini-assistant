@@ -23,7 +23,7 @@
     "dependencies": {
         "@anthropic-ai/sdk": "^0.71.0",
         "@google/generative-ai": "^0.24.1",
-        "openai": "^4.73.0",
+        "openai": "^6.9.1",
         "lucide-react": "^0.263.1",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
