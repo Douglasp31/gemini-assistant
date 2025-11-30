@@ -46737,8 +46737,7 @@ User Request: ${prompt}`;
           },
           ...messages
         ],
-        max_completion_tokens: isReasoningModel ? 16384 : void 0,
-        max_tokens: isReasoningModel ? void 0 : 4096
+        max_completion_tokens: 16384
       });
       if (response.choices && response.choices.length > 0) {
         const message = response.choices[0].message;
