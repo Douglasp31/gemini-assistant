@@ -44,16 +44,20 @@ export class ChatGPTService implements LLMProvider {
         // This allows users to see available models before configuring their key
         if (!this.apiKey) await this.initialize();
 
-        // OpenAI has a models endpoint but we hardcode popular ones for simplicity
+        // OpenAI models - latest first
         return [
+            { id: 'gpt-4.1', name: 'GPT-4.1' },
+            { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini' },
+            { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano' },
             { id: 'gpt-4o', name: 'GPT-4o' },
             { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
             { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
-            { id: 'gpt-4', name: 'GPT-4' },
-            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
+            { id: 'o4-mini', name: 'o4 Mini' },
+            { id: 'o3', name: 'o3' },
+            { id: 'o3-mini', name: 'o3 Mini' },
             { id: 'o1', name: 'o1' },
             { id: 'o1-mini', name: 'o1 Mini' },
-            { id: 'o1-preview', name: 'o1 Preview' }
+            { id: 'o1-pro', name: 'o1 Pro' }
         ];
     }
 
@@ -124,8 +128,8 @@ export class ChatGPTService implements LLMProvider {
             content: content
         });
 
-        // Check if this is an o1 model (reasoning models have different requirements)
-        const isReasoningModel = modelName.startsWith('o1');
+        // Check if this is a reasoning model (o1, o3, o4 - they have different requirements)
+        const isReasoningModel = modelName.startsWith('o1') || modelName.startsWith('o3') || modelName.startsWith('o4');
 
         try {
             const response = await this.openai.chat.completions.create({
