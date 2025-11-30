@@ -46639,8 +46639,6 @@ var ChatGPTService = class {
   async getModels() {
     if (!this.apiKey)
       await this.initialize();
-    if (!this.apiKey)
-      return [];
     return [
       { id: "gpt-4o", name: "GPT-4o" },
       { id: "gpt-4o-mini", name: "GPT-4o Mini" },

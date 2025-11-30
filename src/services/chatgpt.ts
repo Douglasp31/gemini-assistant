@@ -40,8 +40,9 @@ export class ChatGPTService implements LLMProvider {
     }
 
     async getModels() {
+        // Always attempt initialization but return models regardless
+        // This allows users to see available models before configuring their key
         if (!this.apiKey) await this.initialize();
-        if (!this.apiKey) return [];
 
         // OpenAI has a models endpoint but we hardcode popular ones for simplicity
         return [
