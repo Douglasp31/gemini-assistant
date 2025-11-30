@@ -151,8 +151,7 @@ export class ChatGPTService implements LLMProvider {
                     },
                     ...messages
                 ],
-                max_completion_tokens: isReasoningModel ? 16384 : undefined,
-                max_tokens: isReasoningModel ? undefined : 4096,
+                max_completion_tokens: 16384,
             });
 
             if (response.choices && response.choices.length > 0) {
