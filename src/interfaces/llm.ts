@@ -10,6 +10,8 @@ export interface LLMProvider {
         modelName: string,
         mode: 'obsidian' | 'web',
         onToolExecution?: (message: string) => void,
-        attachments?: { name: string, data: string, mimeType: string }[]
+        attachments?: { name: string, data: string, mimeType: string }[],
+        onMetadata?: (metadata: any) => void,
+        options?: { deepThink?: boolean }
     ): Promise<string>;
 }

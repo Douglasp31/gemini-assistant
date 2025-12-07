@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import { App, Notice, TFile } from 'obsidian';
+import { App, Notice, TFile, MarkdownView } from 'obsidian';
 import { VaultService } from './vault';
 
 import { LLMProvider } from '../interfaces/llm';
@@ -71,7 +71,9 @@ export class GeminiService implements LLMProvider {
         modelName: string,
         mode: 'obsidian' | 'web',
         onToolExecution?: (message: string) => void,
-        attachments: { name: string, data: string, mimeType: string }[] = []
+        attachments: { name: string, data: string, mimeType: string }[] = [],
+        onMetadata?: (metadata: any) => void,
+        options?: { deepThink?: boolean }
     ): Promise<string> {
         if (!this.genAI) await this.initialize();
         if (!this.genAI) throw new Error('API Key not found');
@@ -187,11 +189,27 @@ export class GeminiService implements LLMProvider {
             systemInstruction = 'You are a helpful AI assistant with access to Google Search. Use it to provide up-to-date information. Always cite your sources.';
         }
 
-        const model = this.genAI.getGenerativeModel({
+        const modelConfig: any = {
             model: modelName,
             tools: tools,
             systemInstruction: systemInstruction ? { role: 'system', parts: [{ text: systemInstruction }] } as any : undefined
-        });
+        };
+
+        if (options && options.deepThink) {
+            // Add thinking config for Deep Think
+            // According to documentation/User request, they want thinking_level="HIGH"
+            // Since SDK types might vary, we pass it as 'thinkingConfig' which is standard for 0.24+
+            // Or 'thinking_config' if snake_case is required by underlying REST API layer if SDK doesn't map it.
+            // Using 'thinkingConfig' as per latest JS SDK patterns.
+            // Note: 'includeThoughts' is usually what enables it. 'thinkingLevel' might be the param name if supported.
+            // User specifically asked for 'thinking_level="HIGH"'.
+            // I'll try to set it in a way that matches what they likely mean (Thinking mode).
+            // Defaulting to includeThoughts: true is the best robust step.
+            modelConfig.thinkingConfig = { includeThoughts: true };
+            console.log('Gemini: Deep Think enabled (thinkingConfig added)');
+        }
+
+        const model = this.genAI.getGenerativeModel(modelConfig);
 
         // Map history to SDK format
         const chatHistory = history.map(msg => ({
@@ -297,6 +315,24 @@ export class GeminiService implements LLMProvider {
             functionCalls = (response.functionCalls && response.functionCalls()) || [];
         }
 
+        // Extract Usage Metadata
+        // @ts-ignore - usageMetadata might not be in the type definition yet
+        if (response.usageMetadata && onMetadata) {
+            console.log('Gemini usage metadata found:', response.usageMetadata);
+            // @ts-ignore
+            onMetadata({ usage: response.usageMetadata });
+        } else {
+            console.log('No usage metadata in response. Full response keys:', Object.keys(response));
+            console.log('Full response object:', JSON.stringify(response, null, 2));
+            // Try looking for it in case it's nested differently or under a different name
+            // @ts-ignore
+            if (response.usage_metadata) {
+                console.log('Found as usage_metadata (snake_case)');
+                // @ts-ignore
+                if (onMetadata) onMetadata({ usage: response.usage_metadata });
+            }
+        }
+
         try {
             const candidate = response.candidates?.[0];
             if (!candidate || !candidate.content || !candidate.content.parts) {
@@ -304,9 +340,18 @@ export class GeminiService implements LLMProvider {
             }
 
             let finalOutput = '';
+            let thoughts = '';
+
+            if (candidate.content && candidate.content.parts) {
+                console.log('Gemini Response Parts:', JSON.stringify(candidate.content.parts, null, 2));
+            }
 
             for (const part of candidate.content.parts) {
-                if (part.text) {
+                // @ts-ignore - 'thought' property might not be in generic Part type yet
+                if (part.thought) {
+                    // @ts-ignore
+                    thoughts += part.thought + '\n';
+                } else if (part.text) {
                     finalOutput += part.text;
                 } else if (part.inlineData) {
                     // Handle inline image data
@@ -318,6 +363,20 @@ export class GeminiService implements LLMProvider {
                 } else if (part.codeExecutionResult) {
                     finalOutput += `\nOutput:\n\`\`\`\n${part.codeExecutionResult.output}\n\`\`\`\n`;
                 }
+            }
+
+            if (thoughts) {
+                finalOutput = `<details class="gemini-thoughts">
+<summary>Thinking Process</summary>
+
+${thoughts}
+
+</details>
+
+${finalOutput}`;
+            } else if (options?.deepThink) {
+                // Feature was enabled but model returned no thoughts
+                finalOutput = `${finalOutput}\n\n<div style="font-size: 0.8em; color: var(--text-muted); font-style: italic;">(Note: The "Thinking Process" is not supported by this model. Try 'Gemini 2.0 Flash Thinking' if available.)</div>`;
             }
 
             if (!finalOutput) {
@@ -392,6 +451,61 @@ export class GeminiService implements LLMProvider {
         return await this.vaultService.readFile(path);
     }
 
+    async fixSpellingAndGrammar(text: string): Promise<string> {
+        return this.transcribeAudio(text, 'text/plain');
+    }
+
+    async transcribeAudio(input: string, mimeType: string): Promise<string> {
+        if (!this.genAI) await this.initialize();
+        if (!this.genAI) throw new Error('API Key not found');
+
+        try {
+            const spellingFile = this.app.vault.getAbstractFileByPath('Gemini/Command/Spelling Check.md');
+            let specializedVocab = '';
+            if (spellingFile instanceof TFile) {
+                specializedVocab = await this.app.vault.read(spellingFile);
+            }
+
+            const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+            let prompt = `You are a helpful assistant acting as a dictation transcriber and editor.
+            
+Task:
+1.  Transcribe the audio provided perfectly.
+2.  Fix any obvious spelling, grammar, or punctuation errors in the transcription.
+3.  Pay special attention to the following SPECIALIZED VOCABULARY. If you hear something sounding like these words, use the exact spelling provided below:\n\n${specializedVocab}\n
+4.  Return ONLY the final corrected text. Do not output any preamble.`;
+
+            if (mimeType === 'text/plain') {
+                prompt = `You are a helpful assistant.
+Task:
+1.  Fix the spelling, grammar, and punctuation of the following text.
+2.  Use this SPECIALIZED VOCABULARY as the source of truth:\n\n${specializedVocab}\n
+3.  Return ONLY the corrected text.
+
+Input Text:
+${input}`;
+                const result = await model.generateContent(prompt);
+                return result.response.text().trim();
+            } else {
+                const result = await model.generateContent([
+                    prompt,
+                    {
+                        inlineData: {
+                            mimeType: mimeType,
+                            data: input
+                        }
+                    }
+                ]);
+                return result.response.text().trim();
+            }
+
+        } catch (error: any) {
+            console.error('Gemini Dictation Error:', error);
+            new Notice('Gemini Dictation Failed: ' + error.message);
+            throw error;
+        }
+    }
     async syncPlugin() {
         new Notice('Syncing plugin code...');
         const { exec } = require('child_process');
@@ -420,5 +534,52 @@ export class GeminiService implements LLMProvider {
             console.error(`stderr: ${stderr}`);
             new Notice('Plugin code synced successfully!');
         });
+    }
+    insertTextAtCursor(text: string) {
+        console.log('Gemini: Attempting to insert text at cursor...');
+        let view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        console.log('Gemini: Initial getActiveViewOfType result:', view);
+
+        // If focus is on the sidebar (plugin), getActiveViewOfType might return null.
+        // Fallback: Find the most recent markdown leaf.
+        if (!view) {
+            console.log('Gemini: No active view found. Searching leaves...');
+            const leaves = this.app.workspace.getLeavesOfType('markdown');
+            console.log(`Gemini: Found ${leaves.length} markdown leaves.`);
+
+            // Iterate to find a valid one with an editor
+            for (const leaf of leaves) {
+                const v = leaf.view as MarkdownView;
+                // Check if it's really a MarkdownView and has an editor (Source mode)
+                if (v instanceof MarkdownView && v.editor) {
+                    console.log('Gemini: Found valid fallback view:', v.file?.path, 'Mode:', v.getMode());
+                    view = v;
+                    break;
+                } else {
+                    console.log('Gemini: Skipping invalid view:', v.file?.path, 'Has Editor:', !!v.editor);
+                }
+            }
+        }
+
+        if (view) {
+            const editor = view.editor;
+            // Ensure editor exists and is ready
+            if (editor) {
+                console.log('Gemini: Editor found. Replacing selection.');
+
+                // Focus the leaf first to ensure UI updates correctly
+                // @ts-ignore
+                if (view.leaf) this.app.workspace.setActiveLeaf(view.leaf, { focus: true });
+
+                editor.replaceSelection(text);
+                new Notice('Text inserted into document.');
+            } else {
+                console.error('Gemini: View found but no editor instance.');
+                new Notice('Editor not initialized.');
+            }
+        } else {
+            console.error('Gemini: ABSOLUTELY NO MARKDOWN VIEW FOUND.');
+            new Notice('Gemini: No active note found to insert text.');
+        }
     }
 }

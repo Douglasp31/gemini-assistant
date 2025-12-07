@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Copy, Globe, FileText, Paperclip, Trash2, Mic, Square, X, Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { LLMProvider } from '../interfaces/llm';
 import { GitService } from '../services/git';
@@ -13,9 +14,13 @@ interface Message {
     role: 'user' | 'model';
     text?: string;
     isThinking?: boolean;
+    usage?: {
+        promptTokenCount: number;
+        candidatesTokenCount: number;
+        totalTokenCount: number;
+    };
 }
 import { Notice } from 'obsidian';
-import { Copy, Send, Globe, Trash2, RefreshCw, Paperclip, X } from 'lucide-react';
 
 interface Attachment {
     name: string;
@@ -37,7 +42,96 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
     const [selectedGemObsidian, setSelectedGemObsidian] = React.useState('');
     const [selectedGemWeb, setSelectedGemWeb] = React.useState('');
     const [attachments, setAttachments] = React.useState<Attachment[]>([]);
+    const [deepThink, setDeepThink] = React.useState(false);
+    const [isRecording, setIsRecording] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
+    const audioChunksRef = React.useRef<Blob[]>([]);
+
+    const toggleDictation = async () => {
+        if (!activeProvider) {
+            new Notice('Please select an AI provider first.');
+            return;
+        }
+
+        if (isRecording) {
+            // STOP RECORDING
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                mediaRecorderRef.current.stop();
+            }
+            setIsRecording(false);
+        } else {
+            // START RECORDING
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream);
+                mediaRecorderRef.current = mediaRecorder;
+                audioChunksRef.current = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunksRef.current.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    // Turn off mic stream tracks
+                    stream.getTracks().forEach(track => track.stop());
+
+                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                    const reader = new FileReader();
+
+                    new Notice('Processing audio with Gemini...');
+
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = async () => {
+                        const base64String = (reader.result as string).split(',')[1];
+
+                        if (activeProvider.id === 'gemini') {
+                            const gemini = activeProvider as any;
+                            // Use the new transcribeAudio method if available
+                            if (typeof gemini.transcribeAudio === 'function') {
+                                try {
+                                    // Determine mime type (defaulting to webm as that's what we requested)
+                                    // but Chrome/Electron might differ, usually audio/webm
+                                    const text = await gemini.transcribeAudio(base64String, 'audio/webm');
+
+                                    // Check if we should insert into active file
+                                    if (useActiveFile) {
+                                        if (typeof gemini.insertTextAtCursor === 'function') {
+                                            gemini.insertTextAtCursor(text);
+                                            new Notice('Dictation inserted into active file.');
+                                        } else {
+                                            new Notice('Insert to file not supported by this provider.');
+                                            setObsidianInput(prev => (prev + ' ' + text).trim());
+                                        }
+                                    } else {
+                                        setObsidianInput(prev => (prev + ' ' + text).trim());
+                                        new Notice('Dictation added to chat.');
+                                    }
+
+                                } catch (e: any) {
+                                    new Notice('Transcription failed: ' + e.message);
+                                }
+                            } else {
+                                new Notice('Update plugin: transcribeAudio not found on Gemini service.');
+                            }
+                        } else {
+                            new Notice('Audio dictation currently only supported for Gemini.');
+                        }
+                    };
+                };
+
+                mediaRecorder.start();
+                setIsRecording(true);
+                new Notice('Listening...');
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                new Notice('Microphone access denied or not available.');
+                setIsRecording(false);
+            }
+        }
+    };
 
     const activeProvider = providers.find(p => p.id === selectedProviderId) || providers[0];
 
@@ -167,6 +261,7 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
         }
 
         try {
+            let usageData: any = undefined;
             const response = await activeProvider.chat(
                 input,
                 history,
@@ -176,12 +271,23 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
                 (toolMsg) => {
                     new Notice(toolMsg); // Show tool execution as toast
                 },
-                attachments
+                attachments,
+                (metadata) => {
+                    if (metadata && metadata.usage) {
+                        // Capture usage in a variable to use when updating the final message
+                        usageData = metadata.usage;
+                    }
+                },
+                { deepThink }
             );
 
             setMessages(prev => {
                 const newMsgs = [...prev];
-                newMsgs[newMsgs.length - 1] = { role: 'model', text: response };
+                newMsgs[newMsgs.length - 1] = {
+                    role: 'model',
+                    text: response,
+                    usage: usageData
+                };
                 return newMsgs;
             });
             setAttachments([]); // Clear attachments after sending
@@ -278,7 +384,18 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
 
                 </div>
             </div>
-
+            {/* Deep Think Toggle area - visible only for Gemini */}
+            {activeProvider.id === 'gemini' && (
+                <div style={{ padding: '0.5rem 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    <input
+                        type="checkbox"
+                        id="deepThinkToggle"
+                        checked={deepThink}
+                        onChange={(e) => setDeepThink(e.target.checked)}
+                    />
+                    <label htmlFor="deepThinkToggle">Deep Think (High Reasoning)</label>
+                </div>
+            )}
             <div className="gemini-chat-area">
                 {messages.length === 0 && (
                     <div className="gemini-empty-state">
@@ -302,6 +419,11 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
                                     >
                                         <Copy size={12} />
                                     </button>
+                                    {msg.usage && (
+                                        <div className="gemini-usage-stats">
+                                            Tokens: {msg.usage.promptTokenCount} prompt / {msg.usage.candidatesTokenCount} response / {msg.usage.totalTokenCount} total
+                                        </div>
+                                    )}
                                 </>
                             )}
                         </div>
@@ -358,6 +480,14 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
                             rows={3}
                             style={{ resize: 'vertical' }}
                         />
+                        <button
+                            type="button"
+                            onClick={toggleDictation}
+                            className={`gemini-dictation-btn ${isRecording ? 'recording' : ''}`}
+                            title={isRecording ? 'Stop Recording' : 'Start Dictation (Auto-Fix)'}
+                        >
+                            {isRecording ? <Square size={16} fill="currentColor" /> : <Mic size={16} />}
+                        </button>
                         <button type="submit" className="gemini-send-btn obsidian">
                             <Send size={16} />
                         </button>

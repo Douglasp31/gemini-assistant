@@ -62,7 +62,9 @@ export class AnthropicService implements LLMProvider {
         modelName: string,
         mode: 'obsidian' | 'web',
         onToolExecution?: (message: string) => void,
-        attachments: { name: string, data: string, mimeType: string }[] = []
+        attachments: { name: string, data: string, mimeType: string }[] = [],
+        onMetadata?: (metadata: any) => void,
+        options?: { deepThink?: boolean }
     ): Promise<string> {
         if (!this.anthropic) await this.initialize();
         if (!this.anthropic) throw new Error('Anthropic API Key not found. Please create anthropic_api_key.txt in your vault root.');

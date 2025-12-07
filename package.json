@@ -23,10 +23,11 @@
     "dependencies": {
         "@anthropic-ai/sdk": "^0.71.0",
         "@google/generative-ai": "^0.24.1",
-        "openai": "^6.9.1",
         "lucide-react": "^0.263.1",
+        "openai": "^6.9.1",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        "react-markdown": "^8.0.7"
+        "react-markdown": "^8.0.7",
+        "rehype-raw": "^7.0.0"
     }
 }

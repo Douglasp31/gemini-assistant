@@ -24822,6 +24822,138 @@ var ReactDOM = __toESM(require_client());
 // src/components/AIChat.tsx
 var React3 = __toESM(require_react());
 
+// node_modules/lucide-react/dist/esm/createLucideIcon.mjs
+var import_react = __toESM(require_react(), 1);
+
+// node_modules/lucide-react/dist/esm/defaultAttributes.mjs
+var defaultAttributes = {
+  xmlns: "http://www.w3.org/2000/svg",
+  width: 24,
+  height: 24,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round",
+  strokeLinejoin: "round"
+};
+
+// node_modules/lucide-react/dist/esm/createLucideIcon.mjs
+var toKebabCase = (string3) => string3.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+var createLucideIcon = (iconName, iconNode) => {
+  const Component = (0, import_react.forwardRef)(
+    ({ color: color2 = "currentColor", size = 24, strokeWidth = 2, absoluteStrokeWidth, children, ...rest }, ref) => (0, import_react.createElement)(
+      "svg",
+      {
+        ref,
+        ...defaultAttributes,
+        width: size,
+        height: size,
+        stroke: color2,
+        strokeWidth: absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size) : strokeWidth,
+        className: `lucide lucide-${toKebabCase(iconName)}`,
+        ...rest
+      },
+      [
+        ...iconNode.map(([tag, attrs]) => (0, import_react.createElement)(tag, attrs)),
+        ...(Array.isArray(children) ? children : [children]) || []
+      ]
+    )
+  );
+  Component.displayName = `${iconName}`;
+  return Component;
+};
+var createLucideIcon$1 = createLucideIcon;
+
+// node_modules/lucide-react/dist/esm/icons/copy.mjs
+var Copy = createLucideIcon$1("Copy", [
+  [
+    "rect",
+    {
+      width: "14",
+      height: "14",
+      x: "8",
+      y: "8",
+      rx: "2",
+      ry: "2",
+      key: "17jyea"
+    }
+  ],
+  [
+    "path",
+    {
+      d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2",
+      key: "zix9uf"
+    }
+  ]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/globe.mjs
+var Globe = createLucideIcon$1("Globe", [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["line", { x1: "2", x2: "22", y1: "12", y2: "12", key: "1dnqot" }],
+  [
+    "path",
+    {
+      d: "M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
+      key: "nb9nel"
+    }
+  ]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/mic.mjs
+var Mic = createLucideIcon$1("Mic", [
+  [
+    "path",
+    {
+      d: "M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z",
+      key: "131961"
+    }
+  ],
+  ["path", { d: "M19 10v2a7 7 0 0 1-14 0v-2", key: "1vc78b" }],
+  ["line", { x1: "12", x2: "12", y1: "19", y2: "22", key: "x3vr5v" }]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/paperclip.mjs
+var Paperclip = createLucideIcon$1("Paperclip", [
+  [
+    "path",
+    {
+      d: "m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48",
+      key: "1u3ebp"
+    }
+  ]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/send.mjs
+var Send = createLucideIcon$1("Send", [
+  ["path", { d: "m22 2-7 20-4-9-9-4Z", key: "1q3vgg" }],
+  ["path", { d: "M22 2 11 13", key: "nzbqef" }]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/square.mjs
+var Square = createLucideIcon$1("Square", [
+  [
+    "rect",
+    { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }
+  ]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/trash-2.mjs
+var Trash2 = createLucideIcon$1("Trash2", [
+  ["path", { d: "M3 6h18", key: "d0wm0j" }],
+  ["path", { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", key: "4alrt4" }],
+  ["path", { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", key: "v07s0e" }],
+  ["line", { x1: "10", x2: "10", y1: "11", y2: "17", key: "1uufr5" }],
+  ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/x.mjs
+var X = createLucideIcon$1("X", [
+  ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
+  ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
+]);
+
 // node_modules/react-markdown/lib/uri-transformer.js
 var protocols = ["http", "https", "mailto", "tel"];
 function uriTransformer(uri) {
@@ -24853,7 +24985,7 @@ function uriTransformer(uri) {
 }
 
 // node_modules/react-markdown/lib/react-markdown.js
-var import_react2 = __toESM(require_react(), 1);
+var import_react3 = __toESM(require_react(), 1);
 
 // node_modules/vfile/lib/index.js
 var import_is_buffer = __toESM(require_is_buffer(), 1);
@@ -33104,7 +33236,7 @@ function rehypeFilter(options) {
 }
 
 // node_modules/react-markdown/lib/ast-to-react.js
-var import_react = __toESM(require_react(), 1);
+var import_react2 = __toESM(require_react(), 1);
 var import_react_is = __toESM(require_react_is2(), 1);
 
 // node_modules/hast-util-whitespace/index.js
@@ -33190,7 +33322,7 @@ function toReact(context, node2, index2, parent) {
     end: { line: null, column: null, offset: null }
   };
   const component = options.components && own6.call(options.components, name) ? options.components[name] : name;
-  const basic = typeof component === "string" || component === import_react.default.Fragment;
+  const basic = typeof component === "string" || component === import_react2.default.Fragment;
   if (!import_react_is.default.isValidElementType(component)) {
     throw new TypeError(
       `Component for name \`${name}\` not defined or is not renderable`
@@ -33261,7 +33393,7 @@ function toReact(context, node2, index2, parent) {
   if (!basic) {
     properties.node = node2;
   }
-  return children.length > 0 ? import_react.default.createElement(component, properties, children) : import_react.default.createElement(component, properties);
+  return children.length > 0 ? import_react2.default.createElement(component, properties, children) : import_react2.default.createElement(component, properties);
 }
 function getInputElement(node2) {
   let index2 = -1;
@@ -33382,13 +33514,13 @@ function ReactMarkdown(options) {
   if (hastNode.type !== "root") {
     throw new TypeError("Expected a `root` node");
   }
-  let result = import_react2.default.createElement(
-    import_react2.default.Fragment,
+  let result = import_react3.default.createElement(
+    import_react3.default.Fragment,
     {},
     childrenToReact({ options, schema: html3, listDepth: 0 }, hastNode)
   );
   if (options.className) {
-    result = import_react2.default.createElement("div", { className: options.className }, result);
+    result = import_react3.default.createElement("div", { className: options.className }, result);
   }
   return result;
 }
@@ -33454,119 +33586,6 @@ ReactMarkdown.propTypes = {
 
 // src/components/AIChat.tsx
 var import_obsidian = require("obsidian");
-
-// node_modules/lucide-react/dist/esm/createLucideIcon.mjs
-var import_react3 = __toESM(require_react(), 1);
-
-// node_modules/lucide-react/dist/esm/defaultAttributes.mjs
-var defaultAttributes = {
-  xmlns: "http://www.w3.org/2000/svg",
-  width: 24,
-  height: 24,
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 2,
-  strokeLinecap: "round",
-  strokeLinejoin: "round"
-};
-
-// node_modules/lucide-react/dist/esm/createLucideIcon.mjs
-var toKebabCase = (string3) => string3.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
-var createLucideIcon = (iconName, iconNode) => {
-  const Component = (0, import_react3.forwardRef)(
-    ({ color: color2 = "currentColor", size = 24, strokeWidth = 2, absoluteStrokeWidth, children, ...rest }, ref) => (0, import_react3.createElement)(
-      "svg",
-      {
-        ref,
-        ...defaultAttributes,
-        width: size,
-        height: size,
-        stroke: color2,
-        strokeWidth: absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size) : strokeWidth,
-        className: `lucide lucide-${toKebabCase(iconName)}`,
-        ...rest
-      },
-      [
-        ...iconNode.map(([tag, attrs]) => (0, import_react3.createElement)(tag, attrs)),
-        ...(Array.isArray(children) ? children : [children]) || []
-      ]
-    )
-  );
-  Component.displayName = `${iconName}`;
-  return Component;
-};
-var createLucideIcon$1 = createLucideIcon;
-
-// node_modules/lucide-react/dist/esm/icons/copy.mjs
-var Copy = createLucideIcon$1("Copy", [
-  [
-    "rect",
-    {
-      width: "14",
-      height: "14",
-      x: "8",
-      y: "8",
-      rx: "2",
-      ry: "2",
-      key: "17jyea"
-    }
-  ],
-  [
-    "path",
-    {
-      d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2",
-      key: "zix9uf"
-    }
-  ]
-]);
-
-// node_modules/lucide-react/dist/esm/icons/globe.mjs
-var Globe = createLucideIcon$1("Globe", [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["line", { x1: "2", x2: "22", y1: "12", y2: "12", key: "1dnqot" }],
-  [
-    "path",
-    {
-      d: "M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
-      key: "nb9nel"
-    }
-  ]
-]);
-
-// node_modules/lucide-react/dist/esm/icons/paperclip.mjs
-var Paperclip = createLucideIcon$1("Paperclip", [
-  [
-    "path",
-    {
-      d: "m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48",
-      key: "1u3ebp"
-    }
-  ]
-]);
-
-// node_modules/lucide-react/dist/esm/icons/send.mjs
-var Send = createLucideIcon$1("Send", [
-  ["path", { d: "m22 2-7 20-4-9-9-4Z", key: "1q3vgg" }],
-  ["path", { d: "M22 2 11 13", key: "nzbqef" }]
-]);
-
-// node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var Trash2 = createLucideIcon$1("Trash2", [
-  ["path", { d: "M3 6h18", key: "d0wm0j" }],
-  ["path", { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", key: "4alrt4" }],
-  ["path", { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", key: "v07s0e" }],
-  ["line", { x1: "10", x2: "10", y1: "11", y2: "17", key: "1uufr5" }],
-  ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
-]);
-
-// node_modules/lucide-react/dist/esm/icons/x.mjs
-var X = createLucideIcon$1("X", [
-  ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
-  ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
-]);
-
-// src/components/AIChat.tsx
 var AIChat = ({ providers, gitService, getActiveFileContent }) => {
   var _a4;
   const [messages, setMessages] = React3.useState([]);
@@ -33582,7 +33601,78 @@ var AIChat = ({ providers, gitService, getActiveFileContent }) => {
   const [selectedGemObsidian, setSelectedGemObsidian] = React3.useState("");
   const [selectedGemWeb, setSelectedGemWeb] = React3.useState("");
   const [attachments, setAttachments] = React3.useState([]);
+  const [deepThink, setDeepThink] = React3.useState(false);
+  const [isRecording, setIsRecording] = React3.useState(false);
   const fileInputRef = React3.useRef(null);
+  const mediaRecorderRef = React3.useRef(null);
+  const audioChunksRef = React3.useRef([]);
+  const toggleDictation = async () => {
+    if (!activeProvider) {
+      new import_obsidian.Notice("Please select an AI provider first.");
+      return;
+    }
+    if (isRecording) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+      }
+      setIsRecording(false);
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        audioChunksRef.current = [];
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+        mediaRecorder.onstop = async () => {
+          stream.getTracks().forEach((track) => track.stop());
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          const reader = new FileReader();
+          new import_obsidian.Notice("Processing audio with Gemini...");
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64String = reader.result.split(",")[1];
+            if (activeProvider.id === "gemini") {
+              const gemini = activeProvider;
+              if (typeof gemini.transcribeAudio === "function") {
+                try {
+                  const text4 = await gemini.transcribeAudio(base64String, "audio/webm");
+                  if (useActiveFile) {
+                    if (typeof gemini.insertTextAtCursor === "function") {
+                      gemini.insertTextAtCursor(text4);
+                      new import_obsidian.Notice("Dictation inserted into active file.");
+                    } else {
+                      new import_obsidian.Notice("Insert to file not supported by this provider.");
+                      setObsidianInput((prev) => (prev + " " + text4).trim());
+                    }
+                  } else {
+                    setObsidianInput((prev) => (prev + " " + text4).trim());
+                    new import_obsidian.Notice("Dictation added to chat.");
+                  }
+                } catch (e) {
+                  new import_obsidian.Notice("Transcription failed: " + e.message);
+                }
+              } else {
+                new import_obsidian.Notice("Update plugin: transcribeAudio not found on Gemini service.");
+              }
+            } else {
+              new import_obsidian.Notice("Audio dictation currently only supported for Gemini.");
+            }
+          };
+        };
+        mediaRecorder.start();
+        setIsRecording(true);
+        new import_obsidian.Notice("Listening...");
+      } catch (err) {
+        console.error("Error accessing microphone:", err);
+        new import_obsidian.Notice("Microphone access denied or not available.");
+        setIsRecording(false);
+      }
+    }
+  };
   const activeProvider = providers.find((p) => p.id === selectedProviderId) || providers[0];
   React3.useEffect(() => {
     if (activeProvider) {
@@ -33691,6 +33781,7 @@ ${gemContent}`;
       }
     }
     try {
+      let usageData = void 0;
       const response = await activeProvider.chat(
         input,
         history,
@@ -33700,11 +33791,21 @@ ${gemContent}`;
         (toolMsg) => {
           new import_obsidian.Notice(toolMsg);
         },
-        attachments
+        attachments,
+        (metadata) => {
+          if (metadata && metadata.usage) {
+            usageData = metadata.usage;
+          }
+        },
+        { deepThink }
       );
       setMessages((prev) => {
         const newMsgs = [...prev];
-        newMsgs[newMsgs.length - 1] = { role: "model", text: response };
+        newMsgs[newMsgs.length - 1] = {
+          role: "model",
+          text: response,
+          usage: usageData
+        };
         return newMsgs;
       });
       setAttachments([]);
@@ -33788,7 +33889,15 @@ ${gemContent}`;
       title: "Clear Chat History"
     },
     /* @__PURE__ */ React3.createElement(Trash2, { size: 16 })
-  ))), /* @__PURE__ */ React3.createElement("div", { className: "gemini-chat-area" }, messages.length === 0 && /* @__PURE__ */ React3.createElement("div", { className: "gemini-empty-state" }, "Ask questions about your vault,", /* @__PURE__ */ React3.createElement("br", null), "or search the web."), messages.map((msg, idx) => /* @__PURE__ */ React3.createElement("div", { key: idx, className: `gemini-message ${msg.role}` }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-bubble" }, msg.isThinking ? /* @__PURE__ */ React3.createElement("span", { className: "animate-pulse" }, "Thinking...") : /* @__PURE__ */ React3.createElement(React3.Fragment, null, /* @__PURE__ */ React3.createElement("div", { className: "gemini-markdown" }, /* @__PURE__ */ React3.createElement(ReactMarkdown, null, msg.text || "")), /* @__PURE__ */ React3.createElement(
+  ))), activeProvider.id === "gemini" && /* @__PURE__ */ React3.createElement("div", { style: { padding: "0.5rem 1rem 0", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "var(--text-muted)" } }, /* @__PURE__ */ React3.createElement(
+    "input",
+    {
+      type: "checkbox",
+      id: "deepThinkToggle",
+      checked: deepThink,
+      onChange: (e) => setDeepThink(e.target.checked)
+    }
+  ), /* @__PURE__ */ React3.createElement("label", { htmlFor: "deepThinkToggle" }, "Deep Think (High Reasoning)")), /* @__PURE__ */ React3.createElement("div", { className: "gemini-chat-area" }, messages.length === 0 && /* @__PURE__ */ React3.createElement("div", { className: "gemini-empty-state" }, "Ask questions about your vault,", /* @__PURE__ */ React3.createElement("br", null), "or search the web."), messages.map((msg, idx) => /* @__PURE__ */ React3.createElement("div", { key: idx, className: `gemini-message ${msg.role}` }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-bubble" }, msg.isThinking ? /* @__PURE__ */ React3.createElement("span", { className: "animate-pulse" }, "Thinking...") : /* @__PURE__ */ React3.createElement(React3.Fragment, null, /* @__PURE__ */ React3.createElement("div", { className: "gemini-markdown" }, /* @__PURE__ */ React3.createElement(ReactMarkdown, null, msg.text || "")), /* @__PURE__ */ React3.createElement(
     "button",
     {
       onClick: () => copyToClipboard(msg.text),
@@ -33796,7 +33905,7 @@ ${gemContent}`;
       title: "Copy"
     },
     /* @__PURE__ */ React3.createElement(Copy, { size: 12 })
-  )))))), /* @__PURE__ */ React3.createElement("div", { className: "gemini-inputs" }, attachments.length > 0 && /* @__PURE__ */ React3.createElement("div", { className: "gemini-attachments" }, attachments.map((att, idx) => /* @__PURE__ */ React3.createElement("div", { key: idx, className: "gemini-attachment-chip" }, /* @__PURE__ */ React3.createElement("span", { className: "text-xs truncate max-w-[100px]" }, att.name), /* @__PURE__ */ React3.createElement("button", { onClick: () => removeAttachment(idx), className: "gemini-attachment-remove" }, /* @__PURE__ */ React3.createElement(X, { size: 12 }))))), /* @__PURE__ */ React3.createElement(
+  ), msg.usage && /* @__PURE__ */ React3.createElement("div", { className: "gemini-usage-stats" }, "Tokens: ", msg.usage.promptTokenCount, " prompt / ", msg.usage.candidatesTokenCount, " response / ", msg.usage.totalTokenCount, " total")))))), /* @__PURE__ */ React3.createElement("div", { className: "gemini-inputs" }, attachments.length > 0 && /* @__PURE__ */ React3.createElement("div", { className: "gemini-attachments" }, attachments.map((att, idx) => /* @__PURE__ */ React3.createElement("div", { key: idx, className: "gemini-attachment-chip" }, /* @__PURE__ */ React3.createElement("span", { className: "text-xs truncate max-w-[100px]" }, att.name), /* @__PURE__ */ React3.createElement("button", { onClick: () => removeAttachment(idx), className: "gemini-attachment-remove" }, /* @__PURE__ */ React3.createElement(X, { size: 12 }))))), /* @__PURE__ */ React3.createElement(
     "input",
     {
       type: "file",
@@ -33834,6 +33943,15 @@ ${gemContent}`;
       rows: 3,
       style: { resize: "vertical" }
     }
+  ), /* @__PURE__ */ React3.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: toggleDictation,
+      className: `gemini-dictation-btn ${isRecording ? "recording" : ""}`,
+      title: isRecording ? "Stop Recording" : "Start Dictation (Auto-Fix)"
+    },
+    isRecording ? /* @__PURE__ */ React3.createElement(Square, { size: 16, fill: "currentColor" }) : /* @__PURE__ */ React3.createElement(Mic, { size: 16 })
   ), /* @__PURE__ */ React3.createElement("button", { type: "submit", className: "gemini-send-btn obsidian" }, /* @__PURE__ */ React3.createElement(Send, { size: 16 }))), /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", gap: "10px", marginTop: "15px", marginBottom: "15px" } }, customCommands.length > 0 && /* @__PURE__ */ React3.createElement(
     "select",
     {
@@ -35084,7 +35202,7 @@ var GeminiService = class {
       ];
     }
   }
-  async chat(prompt, history, context, modelName, mode, onToolExecution, attachments = []) {
+  async chat(prompt, history, context, modelName, mode, onToolExecution, attachments = [], onMetadata, options) {
     var _a4;
     if (!this.genAI)
       await this.initialize();
@@ -35196,11 +35314,16 @@ var GeminiService = class {
       tools = [{ googleSearch: {} }];
       systemInstruction = "You are a helpful AI assistant with access to Google Search. Use it to provide up-to-date information. Always cite your sources.";
     }
-    const model = this.genAI.getGenerativeModel({
+    const modelConfig = {
       model: modelName,
       tools,
       systemInstruction: systemInstruction ? { role: "system", parts: [{ text: systemInstruction }] } : void 0
-    });
+    };
+    if (options && options.deepThink) {
+      modelConfig.thinkingConfig = { includeThoughts: true };
+      console.log("Gemini: Deep Think enabled (thinkingConfig added)");
+    }
+    const model = this.genAI.getGenerativeModel(modelConfig);
     const chatHistory = history.map((msg) => ({
       role: msg.role,
       parts: [{ text: msg.text }]
@@ -35287,14 +35410,32 @@ User Request: ${prompt}`;
       response = await result.response;
       functionCalls = response.functionCalls && response.functionCalls() || [];
     }
+    if (response.usageMetadata && onMetadata) {
+      console.log("Gemini usage metadata found:", response.usageMetadata);
+      onMetadata({ usage: response.usageMetadata });
+    } else {
+      console.log("No usage metadata in response. Full response keys:", Object.keys(response));
+      console.log("Full response object:", JSON.stringify(response, null, 2));
+      if (response.usage_metadata) {
+        console.log("Found as usage_metadata (snake_case)");
+        if (onMetadata)
+          onMetadata({ usage: response.usage_metadata });
+      }
+    }
     try {
       const candidate = (_a4 = response.candidates) == null ? void 0 : _a4[0];
       if (!candidate || !candidate.content || !candidate.content.parts) {
         throw new Error("No content in response");
       }
       let finalOutput = "";
+      let thoughts = "";
+      if (candidate.content && candidate.content.parts) {
+        console.log("Gemini Response Parts:", JSON.stringify(candidate.content.parts, null, 2));
+      }
       for (const part of candidate.content.parts) {
-        if (part.text) {
+        if (part.thought) {
+          thoughts += part.thought + "\n";
+        } else if (part.text) {
           finalOutput += part.text;
         } else if (part.inlineData) {
           const mimeType = part.inlineData.mimeType;
@@ -35316,6 +35457,20 @@ ${part.codeExecutionResult.output}
 \`\`\`
 `;
         }
+      }
+      if (thoughts) {
+        finalOutput = `<details class="gemini-thoughts">
+<summary>Thinking Process</summary>
+
+${thoughts}
+
+</details>
+
+${finalOutput}`;
+      } else if (options == null ? void 0 : options.deepThink) {
+        finalOutput = `${finalOutput}
+
+<div style="font-size: 0.8em; color: var(--text-muted); font-style: italic;">(Note: The "Thinking Process" is not supported by this model. Try 'Gemini 2.0 Flash Thinking' if available.)</div>`;
       }
       if (!finalOutput) {
         throw new Error("No text or image content in response");
@@ -35379,6 +35534,63 @@ ${part.codeExecutionResult.output}
   async readGem(path4) {
     return await this.vaultService.readFile(path4);
   }
+  async fixSpellingAndGrammar(text4) {
+    return this.transcribeAudio(text4, "text/plain");
+  }
+  async transcribeAudio(input, mimeType) {
+    if (!this.genAI)
+      await this.initialize();
+    if (!this.genAI)
+      throw new Error("API Key not found");
+    try {
+      const spellingFile = this.app.vault.getAbstractFileByPath("Gemini/Command/Spelling Check.md");
+      let specializedVocab = "";
+      if (spellingFile instanceof import_obsidian3.TFile) {
+        specializedVocab = await this.app.vault.read(spellingFile);
+      }
+      const model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      let prompt = `You are a helpful assistant acting as a dictation transcriber and editor.
+            
+Task:
+1.  Transcribe the audio provided perfectly.
+2.  Fix any obvious spelling, grammar, or punctuation errors in the transcription.
+3.  Pay special attention to the following SPECIALIZED VOCABULARY. If you hear something sounding like these words, use the exact spelling provided below:
+
+${specializedVocab}
+
+4.  Return ONLY the final corrected text. Do not output any preamble.`;
+      if (mimeType === "text/plain") {
+        prompt = `You are a helpful assistant.
+Task:
+1.  Fix the spelling, grammar, and punctuation of the following text.
+2.  Use this SPECIALIZED VOCABULARY as the source of truth:
+
+${specializedVocab}
+
+3.  Return ONLY the corrected text.
+
+Input Text:
+${input}`;
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim();
+      } else {
+        const result = await model.generateContent([
+          prompt,
+          {
+            inlineData: {
+              mimeType,
+              data: input
+            }
+          }
+        ]);
+        return result.response.text().trim();
+      }
+    } catch (error) {
+      console.error("Gemini Dictation Error:", error);
+      new import_obsidian3.Notice("Gemini Dictation Failed: " + error.message);
+      throw error;
+    }
+  }
   async syncPlugin() {
     new import_obsidian3.Notice("Syncing plugin code...");
     const { exec } = require("child_process");
@@ -35402,6 +35614,43 @@ ${part.codeExecutionResult.output}
       console.error(`stderr: ${stderr}`);
       new import_obsidian3.Notice("Plugin code synced successfully!");
     });
+  }
+  insertTextAtCursor(text4) {
+    var _a4, _b;
+    console.log("Gemini: Attempting to insert text at cursor...");
+    let view = this.app.workspace.getActiveViewOfType(import_obsidian3.MarkdownView);
+    console.log("Gemini: Initial getActiveViewOfType result:", view);
+    if (!view) {
+      console.log("Gemini: No active view found. Searching leaves...");
+      const leaves = this.app.workspace.getLeavesOfType("markdown");
+      console.log(`Gemini: Found ${leaves.length} markdown leaves.`);
+      for (const leaf of leaves) {
+        const v = leaf.view;
+        if (v instanceof import_obsidian3.MarkdownView && v.editor) {
+          console.log("Gemini: Found valid fallback view:", (_a4 = v.file) == null ? void 0 : _a4.path, "Mode:", v.getMode());
+          view = v;
+          break;
+        } else {
+          console.log("Gemini: Skipping invalid view:", (_b = v.file) == null ? void 0 : _b.path, "Has Editor:", !!v.editor);
+        }
+      }
+    }
+    if (view) {
+      const editor = view.editor;
+      if (editor) {
+        console.log("Gemini: Editor found. Replacing selection.");
+        if (view.leaf)
+          this.app.workspace.setActiveLeaf(view.leaf, { focus: true });
+        editor.replaceSelection(text4);
+        new import_obsidian3.Notice("Text inserted into document.");
+      } else {
+        console.error("Gemini: View found but no editor instance.");
+        new import_obsidian3.Notice("Editor not initialized.");
+      }
+    } else {
+      console.error("Gemini: ABSOLUTELY NO MARKDOWN VIEW FOUND.");
+      new import_obsidian3.Notice("Gemini: No active note found to insert text.");
+    }
   }
 };
 
@@ -40136,7 +40385,7 @@ var AnthropicService = class {
       { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku" }
     ];
   }
-  async chat(prompt, history, context, modelName, mode, onToolExecution, attachments = []) {
+  async chat(prompt, history, context, modelName, mode, onToolExecution, attachments = [], onMetadata, options) {
     if (!this.anthropic)
       await this.initialize();
     if (!this.anthropic)
@@ -47147,7 +47396,7 @@ var ChatGPTService = class {
       { id: "o1-pro", name: "o1 Pro" }
     ];
   }
-  async chat(prompt, history, context, modelName, mode, onToolExecution, attachments = []) {
+  async chat(prompt, history, context, modelName, mode, onToolExecution, attachments = [], onMetadata, options) {
     if (!this.openai)
       await this.initialize();
     if (!this.openai)

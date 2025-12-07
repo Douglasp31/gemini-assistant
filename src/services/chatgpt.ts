@@ -77,7 +77,9 @@ export class ChatGPTService implements LLMProvider {
         modelName: string,
         mode: 'obsidian' | 'web',
         onToolExecution?: (message: string) => void,
-        attachments: { name: string, data: string, mimeType: string }[] = []
+        attachments: { name: string, data: string, mimeType: string }[] = [],
+        onMetadata?: (metadata: any) => void,
+        options?: { deepThink?: boolean }
     ): Promise<string> {
         if (!this.openai) await this.initialize();
         if (!this.openai) throw new Error('ChatGPT API Key not found. Please create chatgpt_api_key.txt in your vault root.');
