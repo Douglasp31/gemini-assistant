@@ -460,36 +460,37 @@ ${finalOutput}`;
         if (!this.genAI) throw new Error('API Key not found');
 
         try {
-            const spellingFile = this.app.vault.getAbstractFileByPath('Gemini/Command/Spelling Check.md');
-            let specializedVocab = '';
-            if (spellingFile instanceof TFile) {
-                specializedVocab = await this.app.vault.read(spellingFile);
+            const dictationFile = this.app.vault.getAbstractFileByPath('Gemini/Command/AI Dictation.md');
+            let systemInstruction = '';
+
+            if (dictationFile instanceof TFile) {
+                systemInstruction = await this.app.vault.read(dictationFile);
+            } else {
+                // Fallback to legacy Spelling Check if new file missing
+                const spellingFile = this.app.vault.getAbstractFileByPath('Gemini/Command/Spelling Check.md');
+                let specializedVocab = '';
+                if (spellingFile instanceof TFile) {
+                    specializedVocab = await this.app.vault.read(spellingFile);
+                }
+                systemInstruction = `You are a helpful assistant acting as a dictation transcriber and editor.
+Task:
+1. Transcribe the audio provided perfectly.
+2. Fix any obvious spelling, grammar, or punctuation errors.
+3. Use this SPECIALIZED VOCABULARY: ${specializedVocab}
+4. Return ONLY the final corrected text.`;
             }
 
             const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-            let prompt = `You are a helpful assistant acting as a dictation transcriber and editor.
-            
-Task:
-1.  Transcribe the audio provided perfectly.
-2.  Fix any obvious spelling, grammar, or punctuation errors in the transcription.
-3.  Pay special attention to the following SPECIALIZED VOCABULARY. If you hear something sounding like these words, use the exact spelling provided below:\n\n${specializedVocab}\n
-4.  Return ONLY the final corrected text. Do not output any preamble.`;
+            // Ensure we strictly request only the text output
+            const finalPrompt = `${systemInstruction}\n\nIMPORTANT: Return ONLY the processed text. Do not include any pleasantries, preambles, or markdown formatting (unless specifically requested in the text).`;
 
             if (mimeType === 'text/plain') {
-                prompt = `You are a helpful assistant.
-Task:
-1.  Fix the spelling, grammar, and punctuation of the following text.
-2.  Use this SPECIALIZED VOCABULARY as the source of truth:\n\n${specializedVocab}\n
-3.  Return ONLY the corrected text.
-
-Input Text:
-${input}`;
-                const result = await model.generateContent(prompt);
+                const result = await model.generateContent([finalPrompt, `\nInput Text to Process:\n${input}`]);
                 return result.response.text().trim();
             } else {
                 const result = await model.generateContent([
-                    prompt,
+                    finalPrompt,
                     {
                         inlineData: {
                             mimeType: mimeType,

@@ -33606,7 +33606,8 @@ var AIChat = ({ providers, gitService, getActiveFileContent }) => {
   const fileInputRef = React3.useRef(null);
   const mediaRecorderRef = React3.useRef(null);
   const audioChunksRef = React3.useRef([]);
-  const toggleDictation = async () => {
+  const [recordingMode, setRecordingMode] = React3.useState("default");
+  const toggleDictation = async (mode = "default") => {
     if (!activeProvider) {
       new import_obsidian.Notice("Please select an AI provider first.");
       return;
@@ -33640,7 +33641,8 @@ var AIChat = ({ providers, gitService, getActiveFileContent }) => {
               if (typeof gemini.transcribeAudio === "function") {
                 try {
                   const text4 = await gemini.transcribeAudio(base64String, "audio/webm");
-                  if (useActiveFile) {
+                  const shouldInsertToFile = mode === "force-insert";
+                  if (shouldInsertToFile) {
                     if (typeof gemini.insertTextAtCursor === "function") {
                       gemini.insertTextAtCursor(text4);
                       new import_obsidian.Notice("Dictation inserted into active file.");
@@ -33648,6 +33650,9 @@ var AIChat = ({ providers, gitService, getActiveFileContent }) => {
                       new import_obsidian.Notice("Insert to file not supported by this provider.");
                       setObsidianInput((prev) => (prev + " " + text4).trim());
                     }
+                  } else if (mode === "web-chat") {
+                    setWebInput((prev) => (prev + " " + text4).trim());
+                    new import_obsidian.Notice("Dictation added to Web Chat.");
                   } else {
                     setObsidianInput((prev) => (prev + " " + text4).trim());
                     new import_obsidian.Notice("Dictation added to chat.");
@@ -33665,7 +33670,8 @@ var AIChat = ({ providers, gitService, getActiveFileContent }) => {
         };
         mediaRecorder.start();
         setIsRecording(true);
-        new import_obsidian.Notice("Listening...");
+        setRecordingMode(mode);
+        new import_obsidian.Notice(mode === "force-insert" ? "Dictating to Note..." : "Listening...");
       } catch (err) {
         console.error("Error accessing microphone:", err);
         new import_obsidian.Notice("Microphone access denied or not available.");
@@ -33854,7 +33860,16 @@ ${gemContent}`;
       }
     }
   };
-  return /* @__PURE__ */ React3.createElement("div", { className: "gemini-assistant-container" }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-header" }, /* @__PURE__ */ React3.createElement("h2", null, "Stephen's AI Assistant"), /* @__PURE__ */ React3.createElement("div", { className: "gemini-header-controls" }, /* @__PURE__ */ React3.createElement(
+  return /* @__PURE__ */ React3.createElement("div", { className: "gemini-assistant-container" }, /* @__PURE__ */ React3.createElement("div", { style: { borderBottom: "1px solid var(--background-modifier-border)" } }, /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px" } }, /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", alignItems: "center", gap: "24px" } }, /* @__PURE__ */ React3.createElement("h2", { style: { margin: 0, color: "#ff4d4d", fontSize: "1.1rem" } }, "Stephen's AI Assistant"), activeProvider.id === "gemini" && /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", color: "var(--text-muted)" } }, /* @__PURE__ */ React3.createElement(
+    "input",
+    {
+      type: "checkbox",
+      id: "deepThinkToggle",
+      checked: deepThink,
+      onChange: (e) => setDeepThink(e.target.checked),
+      style: { cursor: "pointer" }
+    }
+  ), /* @__PURE__ */ React3.createElement("label", { htmlFor: "deepThinkToggle", style: { cursor: "pointer", userSelect: "none" } }, "Deep Think (High Reasoning)"))), /* @__PURE__ */ React3.createElement("div", { className: "gemini-header-controls", style: { gap: "8px" } }, /* @__PURE__ */ React3.createElement(
     "select",
     {
       value: selectedProviderId,
@@ -33889,15 +33904,30 @@ ${gemContent}`;
       title: "Clear Chat History"
     },
     /* @__PURE__ */ React3.createElement(Trash2, { size: 16 })
-  ))), activeProvider.id === "gemini" && /* @__PURE__ */ React3.createElement("div", { style: { padding: "0.5rem 1rem 0", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "var(--text-muted)" } }, /* @__PURE__ */ React3.createElement(
-    "input",
+  ))), /* @__PURE__ */ React3.createElement("div", { style: { padding: "8px 16px", borderTop: "1px solid var(--background-modifier-border)", display: "flex", alignItems: "center" } }, /* @__PURE__ */ React3.createElement(
+    "button",
     {
-      type: "checkbox",
-      id: "deepThinkToggle",
-      checked: deepThink,
-      onChange: (e) => setDeepThink(e.target.checked)
-    }
-  ), /* @__PURE__ */ React3.createElement("label", { htmlFor: "deepThinkToggle" }, "Deep Think (High Reasoning)")), /* @__PURE__ */ React3.createElement("div", { className: "gemini-chat-area" }, messages.length === 0 && /* @__PURE__ */ React3.createElement("div", { className: "gemini-empty-state" }, "Ask questions about your vault,", /* @__PURE__ */ React3.createElement("br", null), "or search the web."), messages.map((msg, idx) => /* @__PURE__ */ React3.createElement("div", { key: idx, className: `gemini-message ${msg.role}` }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-bubble" }, msg.isThinking ? /* @__PURE__ */ React3.createElement("span", { className: "animate-pulse" }, "Thinking...") : /* @__PURE__ */ React3.createElement(React3.Fragment, null, /* @__PURE__ */ React3.createElement("div", { className: "gemini-markdown" }, /* @__PURE__ */ React3.createElement(ReactMarkdown, null, msg.text || "")), /* @__PURE__ */ React3.createElement(
+      onClick: () => toggleDictation("force-insert"),
+      className: `gemini-dictation-pill ${isRecording && recordingMode === "force-insert" ? "recording" : ""}`,
+      title: "Dictate to Active File",
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        padding: "4px 12px",
+        borderRadius: "16px",
+        border: "1px solid var(--background-modifier-border)",
+        background: isRecording && recordingMode === "force-insert" ? "#ff4d4d" : "var(--background-primary)",
+        color: isRecording && recordingMode === "force-insert" ? "white" : "var(--text-normal)",
+        fontSize: "0.8rem",
+        cursor: "pointer",
+        transition: "all 0.2s ease",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+      }
+    },
+    /* @__PURE__ */ React3.createElement("span", { style: { fontWeight: 500 } }, "Dictation"),
+    isRecording && recordingMode === "force-insert" ? /* @__PURE__ */ React3.createElement(Square, { size: 14 }) : /* @__PURE__ */ React3.createElement(Mic, { size: 14 })
+  ))), /* @__PURE__ */ React3.createElement("div", { className: "gemini-chat-area" }, messages.length === 0 && /* @__PURE__ */ React3.createElement("div", { className: "gemini-empty-state" }, "Ask questions about your vault,", /* @__PURE__ */ React3.createElement("br", null), "or search the web."), messages.map((msg, idx) => /* @__PURE__ */ React3.createElement("div", { key: idx, className: `gemini-message ${msg.role}` }, /* @__PURE__ */ React3.createElement("div", { className: "gemini-bubble" }, msg.isThinking ? /* @__PURE__ */ React3.createElement("span", { className: "animate-pulse" }, "Thinking...") : /* @__PURE__ */ React3.createElement(React3.Fragment, null, /* @__PURE__ */ React3.createElement("div", { className: "gemini-markdown" }, /* @__PURE__ */ React3.createElement(ReactMarkdown, null, msg.text || "")), /* @__PURE__ */ React3.createElement(
     "button",
     {
       onClick: () => copyToClipboard(msg.text),
@@ -33947,11 +33977,11 @@ ${gemContent}`;
     "button",
     {
       type: "button",
-      onClick: toggleDictation,
-      className: `gemini-dictation-btn ${isRecording ? "recording" : ""}`,
-      title: isRecording ? "Stop Recording" : "Start Dictation (Auto-Fix)"
+      className: `gemini-dictation-btn ${isRecording && recordingMode === "default" ? "recording" : ""}`,
+      onClick: () => toggleDictation("default"),
+      title: "Dictate to Chat"
     },
-    isRecording ? /* @__PURE__ */ React3.createElement(Square, { size: 16, fill: "currentColor" }) : /* @__PURE__ */ React3.createElement(Mic, { size: 16 })
+    isRecording && recordingMode === "default" ? /* @__PURE__ */ React3.createElement(Square, { size: 14 }) : /* @__PURE__ */ React3.createElement(Mic, { size: 14 })
   ), /* @__PURE__ */ React3.createElement("button", { type: "submit", className: "gemini-send-btn obsidian" }, /* @__PURE__ */ React3.createElement(Send, { size: 16 }))), /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", gap: "10px", marginTop: "15px", marginBottom: "15px" } }, customCommands.length > 0 && /* @__PURE__ */ React3.createElement(
     "select",
     {
@@ -34014,6 +34044,15 @@ ${gemContent}`;
       rows: 3,
       style: { resize: "vertical" }
     }
+  ), /* @__PURE__ */ React3.createElement(
+    "button",
+    {
+      type: "button",
+      className: `gemini-dictation-btn ${isRecording && recordingMode === "web-chat" ? "recording" : ""}`,
+      onClick: () => toggleDictation("web-chat"),
+      title: "Dictate to Web Chat"
+    },
+    isRecording && recordingMode === "web-chat" ? /* @__PURE__ */ React3.createElement(Square, { size: 14 }) : /* @__PURE__ */ React3.createElement(Mic, { size: 14 })
   ), /* @__PURE__ */ React3.createElement("button", { type: "submit", className: "gemini-send-btn web" }, /* @__PURE__ */ React3.createElement(Globe, { size: 16 }))), gems.length > 0 && /* @__PURE__ */ React3.createElement("div", { style: { marginTop: "15px", marginBottom: "15px" } }, /* @__PURE__ */ React3.createElement(
     "select",
     {
@@ -35543,39 +35582,35 @@ ${finalOutput}`;
     if (!this.genAI)
       throw new Error("API Key not found");
     try {
-      const spellingFile = this.app.vault.getAbstractFileByPath("Gemini/Command/Spelling Check.md");
-      let specializedVocab = "";
-      if (spellingFile instanceof import_obsidian3.TFile) {
-        specializedVocab = await this.app.vault.read(spellingFile);
+      const dictationFile = this.app.vault.getAbstractFileByPath("Gemini/Command/AI Dictation.md");
+      let systemInstruction = "";
+      if (dictationFile instanceof import_obsidian3.TFile) {
+        systemInstruction = await this.app.vault.read(dictationFile);
+      } else {
+        const spellingFile = this.app.vault.getAbstractFileByPath("Gemini/Command/Spelling Check.md");
+        let specializedVocab = "";
+        if (spellingFile instanceof import_obsidian3.TFile) {
+          specializedVocab = await this.app.vault.read(spellingFile);
+        }
+        systemInstruction = `You are a helpful assistant acting as a dictation transcriber and editor.
+Task:
+1. Transcribe the audio provided perfectly.
+2. Fix any obvious spelling, grammar, or punctuation errors.
+3. Use this SPECIALIZED VOCABULARY: ${specializedVocab}
+4. Return ONLY the final corrected text.`;
       }
       const model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-      let prompt = `You are a helpful assistant acting as a dictation transcriber and editor.
-            
-Task:
-1.  Transcribe the audio provided perfectly.
-2.  Fix any obvious spelling, grammar, or punctuation errors in the transcription.
-3.  Pay special attention to the following SPECIALIZED VOCABULARY. If you hear something sounding like these words, use the exact spelling provided below:
+      const finalPrompt = `${systemInstruction}
 
-${specializedVocab}
-
-4.  Return ONLY the final corrected text. Do not output any preamble.`;
+IMPORTANT: Return ONLY the processed text. Do not include any pleasantries, preambles, or markdown formatting (unless specifically requested in the text).`;
       if (mimeType === "text/plain") {
-        prompt = `You are a helpful assistant.
-Task:
-1.  Fix the spelling, grammar, and punctuation of the following text.
-2.  Use this SPECIALIZED VOCABULARY as the source of truth:
-
-${specializedVocab}
-
-3.  Return ONLY the corrected text.
-
-Input Text:
-${input}`;
-        const result = await model.generateContent(prompt);
+        const result = await model.generateContent([finalPrompt, `
+Input Text to Process:
+${input}`]);
         return result.response.text().trim();
       } else {
         const result = await model.generateContent([
-          prompt,
+          finalPrompt,
           {
             inlineData: {
               mimeType,

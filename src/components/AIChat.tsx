@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Copy, Globe, FileText, Paperclip, Trash2, Mic, Square, X, Send } from 'lucide-react';
+import { Copy, Globe, FileText, Paperclip, Trash2, Mic, Square, X, Send, ArrowRight } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { LLMProvider } from '../interfaces/llm';
 import { GitService } from '../services/git';
@@ -48,7 +48,10 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
     const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
     const audioChunksRef = React.useRef<Blob[]>([]);
 
-    const toggleDictation = async () => {
+    const [recordingMode, setRecordingMode] = React.useState<'default' | 'force-insert' | 'web-chat'>('default');
+
+    // mode: 'default' (obsidian chat), 'web-chat' (web chat), or 'force-insert' (header button)
+    const toggleDictation = async (mode: 'default' | 'force-insert' | 'web-chat' = 'default') => {
         if (!activeProvider) {
             new Notice('Please select an AI provider first.');
             return;
@@ -60,8 +63,14 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
                 mediaRecorderRef.current.stop();
             }
             setIsRecording(false);
+            // forceInsertFile state will be read in the closure of onstop (captured when started) 
+            // - WAIT, onstop is defined inside "start" block.
+            // When stopping, we just stop. The logic runs in the onstop handler defined during START.
         } else {
             // START RECORDING
+            // Update the state for THIS recording session
+            // setRecordingMode is handled below before start() to ensure state is ready
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const mediaRecorder = new MediaRecorder(stream);
@@ -97,7 +106,12 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
                                     const text = await gemini.transcribeAudio(base64String, 'audio/webm');
 
                                     // Check if we should insert into active file
-                                    if (useActiveFile) {
+                                    // Logic: ONLY insert to file if mode is explicitly 'force-insert' (Top Button)
+                                    // The 'useActiveFile' checkbox is now ONLY for context context during chat submission.
+
+                                    const shouldInsertToFile = mode === 'force-insert';
+
+                                    if (shouldInsertToFile) {
                                         if (typeof gemini.insertTextAtCursor === 'function') {
                                             gemini.insertTextAtCursor(text);
                                             new Notice('Dictation inserted into active file.');
@@ -105,6 +119,9 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
                                             new Notice('Insert to file not supported by this provider.');
                                             setObsidianInput(prev => (prev + ' ' + text).trim());
                                         }
+                                    } else if (mode === 'web-chat') {
+                                        setWebInput(prev => (prev + ' ' + text).trim());
+                                        new Notice('Dictation added to Web Chat.');
                                     } else {
                                         setObsidianInput(prev => (prev + ' ' + text).trim());
                                         new Notice('Dictation added to chat.');
@@ -124,7 +141,8 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
 
                 mediaRecorder.start();
                 setIsRecording(true);
-                new Notice('Listening...');
+                setRecordingMode(mode); // Track which mode is recording to show correct icon state
+                new Notice(mode === 'force-insert' ? 'Dictating to Note...' : 'Listening...');
             } catch (err) {
                 console.error('Error accessing microphone:', err);
                 new Notice('Microphone access denied or not available.');
@@ -343,59 +361,96 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
 
     return (
         <div className="gemini-assistant-container">
-            <div className="gemini-header">
-                <h2>Stephen's AI Assistant</h2>
-                <div className="gemini-header-controls">
-                    <select
-                        value={selectedProviderId}
-                        onChange={handleProviderChange}
-                        className="gemini-model-select"
-                        style={{ minWidth: '110px' }}
-                    >
-                        {providers.map(p => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={selectedModel}
-                        onChange={handleModelChange}
-                        className="gemini-model-select"
-                    >
-                        {models.map(m => (
-                            <option key={m.id} value={m.id}>{m.name}</option>
-                        ))}
-                    </select>
-                    <button
-                        onClick={copyAll}
-                        className="gemini-header-btn"
-                        title="Copy Conversation"
-                        style={{ gap: '4px' }}
-                    >
-                        <Copy size={16} />
-                        <span style={{ fontSize: '0.75rem' }}>Copy</span>
-                    </button>
-                    <button
-                        onClick={clearChat}
-                        className="gemini-header-btn"
-                        title="Clear Chat History"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+            {/* HEADER CONTAINER */}
+            <div style={{ borderBottom: '1px solid var(--background-modifier-border)' }}>
+                {/* ROW 1: Title, Deep Think, Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px' }}>
 
+                    {/* Left: Title + Deep Think */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                        <h2 style={{ margin: 0, color: '#ff4d4d', fontSize: '1.1rem' }}>Stephen's AI Assistant</h2>
+
+                        {/* Deep Think Toggle - Inline */}
+                        {activeProvider.id === 'gemini' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                <input
+                                    type="checkbox"
+                                    id="deepThinkToggle"
+                                    checked={deepThink}
+                                    onChange={(e) => setDeepThink(e.target.checked)}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                                <label htmlFor="deepThinkToggle" style={{ cursor: 'pointer', userSelect: 'none' }}>Deep Think (High Reasoning)</label>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right: Controls */}
+                    <div className="gemini-header-controls" style={{ gap: '8px' }}>
+                        <select
+                            value={selectedProviderId}
+                            onChange={handleProviderChange}
+                            className="gemini-model-select"
+                            style={{ minWidth: '110px' }}
+                        >
+                            {providers.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={selectedModel}
+                            onChange={handleModelChange}
+                            className="gemini-model-select"
+                        >
+                            {models.map(m => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={copyAll}
+                            className="gemini-header-btn"
+                            title="Copy Conversation"
+                            style={{ gap: '4px' }}
+                        >
+                            <Copy size={16} />
+                            <span style={{ fontSize: '0.75rem' }}>Copy</span>
+                        </button>
+                        <button
+                            onClick={clearChat}
+                            className="gemini-header-btn"
+                            title="Clear Chat History"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* ROW 2: Active Document Options (b/w separator) */}
+                <div style={{ padding: '8px 16px', borderTop: '1px solid var(--background-modifier-border)', display: 'flex', alignItems: 'center' }}>
+                    <button
+                        onClick={() => toggleDictation('force-insert')}
+                        className={`gemini-dictation-pill ${isRecording && recordingMode === 'force-insert' ? 'recording' : ''}`}
+                        title="Dictate to Active File"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 12px',
+                            borderRadius: '16px',
+                            border: '1px solid var(--background-modifier-border)',
+                            background: isRecording && recordingMode === 'force-insert' ? '#ff4d4d' : 'var(--background-primary)',
+                            color: isRecording && recordingMode === 'force-insert' ? 'white' : 'var(--text-normal)',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                        }}
+                    >
+                        <span style={{ fontWeight: 500 }}>Dictation</span>
+                        {isRecording && recordingMode === 'force-insert' ? <Square size={14} /> : <Mic size={14} />}
+                    </button>
                 </div>
             </div>
-            {/* Deep Think Toggle area - visible only for Gemini */}
-            {activeProvider.id === 'gemini' && (
-                <div style={{ padding: '0.5rem 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    <input
-                        type="checkbox"
-                        id="deepThinkToggle"
-                        checked={deepThink}
-                        onChange={(e) => setDeepThink(e.target.checked)}
-                    />
-                    <label htmlFor="deepThinkToggle">Deep Think (High Reasoning)</label>
-                </div>
-            )}
             <div className="gemini-chat-area">
                 {messages.length === 0 && (
                     <div className="gemini-empty-state">
@@ -482,11 +537,11 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
                         />
                         <button
                             type="button"
-                            onClick={toggleDictation}
-                            className={`gemini-dictation-btn ${isRecording ? 'recording' : ''}`}
-                            title={isRecording ? 'Stop Recording' : 'Start Dictation (Auto-Fix)'}
+                            className={`gemini-dictation-btn ${isRecording && recordingMode === 'default' ? 'recording' : ''}`}
+                            onClick={() => toggleDictation('default')}
+                            title="Dictate to Chat"
                         >
-                            {isRecording ? <Square size={16} fill="currentColor" /> : <Mic size={16} />}
+                            {isRecording && recordingMode === 'default' ? <Square size={14} /> : <Mic size={14} />}
                         </button>
                         <button type="submit" className="gemini-send-btn obsidian">
                             <Send size={16} />
@@ -565,6 +620,14 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
                             rows={3}
                             style={{ resize: 'vertical' }}
                         />
+                        <button
+                            type="button"
+                            className={`gemini-dictation-btn ${isRecording && recordingMode === 'web-chat' ? 'recording' : ''}`}
+                            onClick={() => toggleDictation('web-chat')}
+                            title="Dictate to Web Chat"
+                        >
+                            {isRecording && recordingMode === 'web-chat' ? <Square size={14} /> : <Mic size={14} />}
+                        </button>
                         <button type="submit" className="gemini-send-btn web">
                             <Globe size={16} />
                         </button>
