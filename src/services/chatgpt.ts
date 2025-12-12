@@ -46,6 +46,10 @@ export class ChatGPTService implements LLMProvider {
 
         // OpenAI models - latest first
         return [
+            // GPT-5.2 Series (newest)
+            { id: 'gpt-5.2', name: 'GPT-5.2' },
+            { id: 'gpt-5.2-mini', name: 'GPT-5.2 Mini' },
+            { id: 'gpt-5.2-nano', name: 'GPT-5.2 Nano' },
             // GPT-5.1 Series (newest)
             { id: 'gpt-5.1', name: 'GPT-5.1' },
             { id: 'gpt-5.1-mini', name: 'GPT-5.1 Mini' },

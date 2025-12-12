@@ -368,7 +368,7 @@ export const AIChat: React.FC<AIChatProps> = ({ providers, gitService, getActive
 
                     {/* Left: Title + Deep Think */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                        <h2 style={{ margin: 0, color: '#ff4d4d', fontSize: '1.1rem' }}>Stephen's AI Assistant</h2>
+                        <h2 style={{ margin: 0, color: '#ff4d4d', fontSize: '1.1rem' }}>My AI</h2>
 
                         {/* Deep Think Toggle - Inline */}
                         {activeProvider.id === 'gemini' && (

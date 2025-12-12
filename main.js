@@ -33860,7 +33860,7 @@ ${gemContent}`;
       }
     }
   };
-  return /* @__PURE__ */ React3.createElement("div", { className: "gemini-assistant-container" }, /* @__PURE__ */ React3.createElement("div", { style: { borderBottom: "1px solid var(--background-modifier-border)" } }, /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px" } }, /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", alignItems: "center", gap: "24px" } }, /* @__PURE__ */ React3.createElement("h2", { style: { margin: 0, color: "#ff4d4d", fontSize: "1.1rem" } }, "Stephen's AI Assistant"), activeProvider.id === "gemini" && /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", color: "var(--text-muted)" } }, /* @__PURE__ */ React3.createElement(
+  return /* @__PURE__ */ React3.createElement("div", { className: "gemini-assistant-container" }, /* @__PURE__ */ React3.createElement("div", { style: { borderBottom: "1px solid var(--background-modifier-border)" } }, /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px" } }, /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", alignItems: "center", gap: "24px" } }, /* @__PURE__ */ React3.createElement("h2", { style: { margin: 0, color: "#ff4d4d", fontSize: "1.1rem" } }, "My AI"), activeProvider.id === "gemini" && /* @__PURE__ */ React3.createElement("div", { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", color: "var(--text-muted)" } }, /* @__PURE__ */ React3.createElement(
     "input",
     {
       type: "checkbox",
@@ -47408,6 +47408,10 @@ var ChatGPTService = class {
     if (!this.apiKey)
       await this.initialize();
     return [
+      // GPT-5.2 Series (newest)
+      { id: "gpt-5.2", name: "GPT-5.2" },
+      { id: "gpt-5.2-mini", name: "GPT-5.2 Mini" },
+      { id: "gpt-5.2-nano", name: "GPT-5.2 Nano" },
       // GPT-5.1 Series (newest)
       { id: "gpt-5.1", name: "GPT-5.1" },
       { id: "gpt-5.1-mini", name: "GPT-5.1 Mini" },
