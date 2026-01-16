@@ -81,112 +81,115 @@ export class GeminiService implements LLMProvider {
         let tools: any[] = [];
         let systemInstruction = '';
 
-        if (mode === 'obsidian') {
-            // Try to load ANTIGRAVITY.md
-            try {
-                const antigravityFile = this.app.vault.getAbstractFileByPath('ANTIGRAVITY.md');
-                if (antigravityFile instanceof TFile) {
-                    systemInstruction = await this.app.vault.read(antigravityFile);
-                    console.log('Loaded system instructions from ANTIGRAVITY.md');
-                } else {
-                    systemInstruction = 'You are a helpful AI assistant integrated into Obsidian. You can read and modify notes in the vault.';
-                }
-            } catch (e) {
-                console.warn('Failed to load ANTIGRAVITY.md', e);
+        // Try to load ANTIGRAVITY.md
+        try {
+            const antigravityFile = this.app.vault.getAbstractFileByPath('MY_AI/ANTIGRAVITY.md');
+            if (antigravityFile instanceof TFile) {
+                systemInstruction = await this.app.vault.read(antigravityFile);
+                console.log('Loaded system instructions from ANTIGRAVITY.md');
+            } else {
                 systemInstruction = 'You are a helpful AI assistant integrated into Obsidian. You can read and modify notes in the vault.';
             }
+        } catch (e) {
+            console.warn('Failed to load ANTIGRAVITY.md', e);
+            systemInstruction = 'You are a helpful AI assistant integrated into Obsidian. You can read and modify notes in the vault.';
+        }
 
+        const vaultFunctionDeclarations = [
+            {
+                name: 'list_files',
+                description: 'List files in the vault.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        directory: { type: 'STRING' },
+                        recursive: { type: 'BOOLEAN' },
+                        limit: { type: 'NUMBER' }
+                    }
+                }
+            },
+            {
+                name: 'read_note',
+                description: 'Read the content of a note.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: { filename: { type: 'STRING' } },
+                    required: ['filename']
+                }
+            },
+            {
+                name: 'save_note',
+                description: 'Save or overwrite a note.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        filename: { type: 'STRING' },
+                        content: { type: 'STRING' }
+                    },
+                    required: ['filename', 'content']
+                }
+            },
+            {
+                name: 'update_frontmatter',
+                description: 'Update frontmatter property.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        path: { type: 'STRING' },
+                        key: { type: 'STRING' },
+                        value: { type: 'STRING' }
+                    },
+                    required: ['path', 'key', 'value']
+                }
+            },
+            {
+                name: 'find_files_by_name',
+                description: 'Find files by name (fuzzy match). Returns the FULL PATH of matching files. Use this FULL PATH when fixing links.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        name: { type: 'STRING' }
+                    },
+                    required: ['name']
+                }
+            },
+            {
+                name: 'replace_in_note',
+                description: 'Replace a specific string in a note with a new string. When fixing links, replace the old link with a Wikilink containing the FULL PATH (e.g., "![[Path/To/File.png]]").',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        path: { type: 'STRING' },
+                        target: { type: 'STRING' },
+                        replacement: { type: 'STRING' }
+                    },
+                    required: ['path', 'target', 'replacement']
+                }
+            },
+            {
+                name: 'delete_note',
+                description: 'Safely delete a note by moving it to the Trash folder.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        path: { type: 'STRING', description: 'The path of the file to delete' }
+                    },
+                    required: ['path']
+                }
+            }
+        ];
+
+        if (mode === 'obsidian') {
             tools = [
                 {
-                    functionDeclarations: [
-                        {
-                            name: 'list_files',
-                            description: 'List files in the vault.',
-                            parameters: {
-                                type: 'OBJECT',
-                                properties: {
-                                    directory: { type: 'STRING' },
-                                    recursive: { type: 'BOOLEAN' },
-                                    limit: { type: 'NUMBER' }
-                                }
-                            }
-                        },
-                        {
-                            name: 'read_note',
-                            description: 'Read the content of a note.',
-                            parameters: {
-                                type: 'OBJECT',
-                                properties: { filename: { type: 'STRING' } },
-                                required: ['filename']
-                            }
-                        },
-                        {
-                            name: 'save_note',
-                            description: 'Save or overwrite a note.',
-                            parameters: {
-                                type: 'OBJECT',
-                                properties: {
-                                    filename: { type: 'STRING' },
-                                    content: { type: 'STRING' }
-                                },
-                                required: ['filename', 'content']
-                            }
-                        },
-                        {
-                            name: 'update_frontmatter',
-                            description: 'Update frontmatter property.',
-                            parameters: {
-                                type: 'OBJECT',
-                                properties: {
-                                    path: { type: 'STRING' },
-                                    key: { type: 'STRING' },
-                                    value: { type: 'STRING' }
-                                },
-                                required: ['path', 'key', 'value']
-                            }
-                        },
-                        {
-                            name: 'find_files_by_name',
-                            description: 'Find files by name (fuzzy match). Returns the FULL PATH of matching files. Use this FULL PATH when fixing links.',
-                            parameters: {
-                                type: 'OBJECT',
-                                properties: {
-                                    name: { type: 'STRING' }
-                                },
-                                required: ['name']
-                            }
-                        },
-                        {
-                            name: 'replace_in_note',
-                            description: 'Replace a specific string in a note with a new string. When fixing links, replace the old link with a Wikilink containing the FULL PATH (e.g., "![[Path/To/File.png]]").',
-                            parameters: {
-                                type: 'OBJECT',
-                                properties: {
-                                    path: { type: 'STRING' },
-                                    target: { type: 'STRING' },
-                                    replacement: { type: 'STRING' }
-                                },
-                                required: ['path', 'target', 'replacement']
-                            }
-                        },
-                        {
-                            name: 'delete_note',
-                            description: 'Safely delete a note by moving it to the Trash folder.',
-                            parameters: {
-                                type: 'OBJECT',
-                                properties: {
-                                    path: { type: 'STRING', description: 'The path of the file to delete' }
-                                },
-                                required: ['path']
-                            }
-                        }
-                    ]
+                    functionDeclarations: vaultFunctionDeclarations
                 }
             ];
         } else {
             // Web Mode
             tools = [{ googleSearch: {} }];
-            systemInstruction = 'You are a helpful AI assistant with access to Google Search. Use it to provide up-to-date information. Always cite your sources.';
+            systemInstruction = 'You are a helpful AI assistant with access to Google Search. You must provide up-to-date information and cite your sources.\n\nIMPORTANT: You cannot directly call tools to save files in this mode. However, you can instruct the system to save a file by formatting your output exactly like this:\n\n```\n/// SAVE: <path/to/file.md>\n<File Content Here>\n```\n\nIf the user asks to save the results, wrap the content in this block. Ensure the path is valid.';
+            new Notice('Gemini Web: Search Active (Client-Side Save Enabled)');
         }
 
         const modelConfig: any = {
@@ -384,6 +387,48 @@ ${finalOutput}`;
             }
 
             console.log('Final processed response:', finalOutput);
+            console.log('Final processed response:', finalOutput);
+
+            // Client-Side Save Handling (Workaround for Web Mode)
+            // Client-Side Save Handling (Workaround for Web Mode)
+            if (mode === 'web') {
+                // Try permissive regex that works with or without code blocks
+                const saveRegex = /(?:```)?\s*\/\/\/\s*SAVE:\s*(.+?)\n([\s\S]+?)(?:```|$)/g;
+                let match;
+                let saveDetected = false;
+
+                while ((match = saveRegex.exec(finalOutput)) !== null) {
+                    saveDetected = true;
+                    // Group 1 is path, Group 2 is content
+                    const path = match[1].trim();
+                    const content = match[2];
+
+                    console.log(`Client-Side Save detected: ${path}`);
+
+                    try {
+                        // Ensure we aren't saving an empty file if extraction failed
+                        if (!content || content.trim().length === 0) {
+                            throw new Error('extracted content was empty');
+                        }
+
+                        await this.vaultService.saveNote(path, content);
+                        new Notice(`Saved: ${path}`);
+                        finalOutput += `\n\n> [!SUCCESS] Saved file: [[${path}]]`;
+                    } catch (e: any) {
+                        console.error('Client-Side Save Failed:', e);
+                        new Notice(`Failed to save ${path}: ${e.message}`);
+                        finalOutput += `\n\n> [!ERROR] Failed to save file: ${e.message}`;
+                    }
+                }
+
+                // If no match was found via regex but the text exists, warn the user
+                if (!saveDetected && finalOutput.includes('/// SAVE:')) {
+                    console.warn('Save pattern detected but Regex failed to extract content.');
+                    new Notice('Gemini: found save command but could not parse it.');
+                    finalOutput += '\n\n> [!WARNING] Auto-Save Failed: The AI tried to save a file but the format was slightly off. Please copy the content manually.';
+                }
+            }
+
             return finalOutput;
 
         } catch (e) {
@@ -407,7 +452,7 @@ ${finalOutput}`;
 
     async getCustomCommands(): Promise<{ label: string, prompt: string }[]> {
         try {
-            const antigravityFile = this.app.vault.getAbstractFileByPath('ANTIGRAVITY.md');
+            const antigravityFile = this.app.vault.getAbstractFileByPath('MY_AI/ANTIGRAVITY.md');
             if (antigravityFile instanceof TFile) {
                 const content = await this.app.vault.read(antigravityFile);
                 const match = content.match(/## Custom Commands\n([\s\S]*?)(?=$|^#)/);
@@ -436,7 +481,7 @@ ${finalOutput}`;
 
     async getGems(): Promise<{ name: string, path: string }[]> {
         try {
-            const files = await this.vaultService.listFiles('Gemini Gems');
+            const files = await this.vaultService.listFiles('MY_AI/Gemini Gems');
             return files.map(path => ({
                 name: path.split('/').pop()?.replace('.md', '') || path,
                 path: path
@@ -460,14 +505,14 @@ ${finalOutput}`;
         if (!this.genAI) throw new Error('API Key not found');
 
         try {
-            const dictationFile = this.app.vault.getAbstractFileByPath('Gemini/Command/AI Dictation.md');
+            const dictationFile = this.app.vault.getAbstractFileByPath('MY_AI/Gemini/Command/AI Dictation.md');
             let systemInstruction = '';
 
             if (dictationFile instanceof TFile) {
                 systemInstruction = await this.app.vault.read(dictationFile);
             } else {
                 // Fallback to legacy Spelling Check if new file missing
-                const spellingFile = this.app.vault.getAbstractFileByPath('Gemini/Command/Spelling Check.md');
+                const spellingFile = this.app.vault.getAbstractFileByPath('MY_AI/Gemini/Command/Spelling Check.md');
                 let specializedVocab = '';
                 if (spellingFile instanceof TFile) {
                     specializedVocab = await this.app.vault.read(spellingFile);
@@ -511,7 +556,7 @@ Task:
         new Notice('Syncing plugin code...');
         const { exec } = require('child_process');
 
-        const sourceDir = '/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant';
+        const sourceDir = '/Volumes/T9_Main/PKM/Obsidian Main Sync/MY_AI/gemini-assistant';
 
         // Add path to credential helper and common git locations
         const pathFix = 'export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core';

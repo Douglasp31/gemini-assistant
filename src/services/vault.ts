@@ -45,12 +45,20 @@ export class VaultService {
             return `Successfully updated note: ${normalizedPath}`;
         } else {
             // Ensure folders exist
-            const folders = normalizedPath.split('/').slice(0, -1).join('/');
-            if (folders) {
-                try {
-                    await this.app.vault.createFolder(folders);
-                } catch (e) {
-                    // Ignore if folder exists
+            // Ensure folders exist recursively
+            const folders = normalizedPath.split('/').slice(0, -1);
+            if (folders.length > 0) {
+                let currentPath = '';
+                for (const folder of folders) {
+                    currentPath = currentPath === '' ? folder : `${currentPath}/${folder}`;
+                    try {
+                        const existing = this.app.vault.getAbstractFileByPath(currentPath);
+                        if (!existing) {
+                            await this.app.vault.createFolder(currentPath);
+                        }
+                    } catch (e) {
+                        // Ignore if folder exists or error
+                    }
                 }
             }
             await this.app.vault.create(normalizedPath, content);

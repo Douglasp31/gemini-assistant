@@ -35125,11 +35125,18 @@ var VaultService = class {
       await this.app.vault.modify(file, content3);
       return `Successfully updated note: ${normalizedPath}`;
     } else {
-      const folders = normalizedPath.split("/").slice(0, -1).join("/");
-      if (folders) {
-        try {
-          await this.app.vault.createFolder(folders);
-        } catch (e) {
+      const folders = normalizedPath.split("/").slice(0, -1);
+      if (folders.length > 0) {
+        let currentPath = "";
+        for (const folder of folders) {
+          currentPath = currentPath === "" ? folder : `${currentPath}/${folder}`;
+          try {
+            const existing = this.app.vault.getAbstractFileByPath(currentPath);
+            if (!existing) {
+              await this.app.vault.createFolder(currentPath);
+            }
+          } catch (e) {
+          }
         }
       }
       await this.app.vault.create(normalizedPath, content3);
@@ -35249,109 +35256,111 @@ var GeminiService = class {
       throw new Error("API Key not found");
     let tools = [];
     let systemInstruction = "";
-    if (mode === "obsidian") {
-      try {
-        const antigravityFile = this.app.vault.getAbstractFileByPath("ANTIGRAVITY.md");
-        if (antigravityFile instanceof import_obsidian3.TFile) {
-          systemInstruction = await this.app.vault.read(antigravityFile);
-          console.log("Loaded system instructions from ANTIGRAVITY.md");
-        } else {
-          systemInstruction = "You are a helpful AI assistant integrated into Obsidian. You can read and modify notes in the vault.";
-        }
-      } catch (e) {
-        console.warn("Failed to load ANTIGRAVITY.md", e);
+    try {
+      const antigravityFile = this.app.vault.getAbstractFileByPath("MY_AI/ANTIGRAVITY.md");
+      if (antigravityFile instanceof import_obsidian3.TFile) {
+        systemInstruction = await this.app.vault.read(antigravityFile);
+        console.log("Loaded system instructions from ANTIGRAVITY.md");
+      } else {
         systemInstruction = "You are a helpful AI assistant integrated into Obsidian. You can read and modify notes in the vault.";
       }
+    } catch (e) {
+      console.warn("Failed to load ANTIGRAVITY.md", e);
+      systemInstruction = "You are a helpful AI assistant integrated into Obsidian. You can read and modify notes in the vault.";
+    }
+    const vaultFunctionDeclarations = [
+      {
+        name: "list_files",
+        description: "List files in the vault.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            directory: { type: "STRING" },
+            recursive: { type: "BOOLEAN" },
+            limit: { type: "NUMBER" }
+          }
+        }
+      },
+      {
+        name: "read_note",
+        description: "Read the content of a note.",
+        parameters: {
+          type: "OBJECT",
+          properties: { filename: { type: "STRING" } },
+          required: ["filename"]
+        }
+      },
+      {
+        name: "save_note",
+        description: "Save or overwrite a note.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            filename: { type: "STRING" },
+            content: { type: "STRING" }
+          },
+          required: ["filename", "content"]
+        }
+      },
+      {
+        name: "update_frontmatter",
+        description: "Update frontmatter property.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            path: { type: "STRING" },
+            key: { type: "STRING" },
+            value: { type: "STRING" }
+          },
+          required: ["path", "key", "value"]
+        }
+      },
+      {
+        name: "find_files_by_name",
+        description: "Find files by name (fuzzy match). Returns the FULL PATH of matching files. Use this FULL PATH when fixing links.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            name: { type: "STRING" }
+          },
+          required: ["name"]
+        }
+      },
+      {
+        name: "replace_in_note",
+        description: 'Replace a specific string in a note with a new string. When fixing links, replace the old link with a Wikilink containing the FULL PATH (e.g., "![[Path/To/File.png]]").',
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            path: { type: "STRING" },
+            target: { type: "STRING" },
+            replacement: { type: "STRING" }
+          },
+          required: ["path", "target", "replacement"]
+        }
+      },
+      {
+        name: "delete_note",
+        description: "Safely delete a note by moving it to the Trash folder.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            path: { type: "STRING", description: "The path of the file to delete" }
+          },
+          required: ["path"]
+        }
+      }
+    ];
+    if (mode === "obsidian") {
       tools = [
         {
-          functionDeclarations: [
-            {
-              name: "list_files",
-              description: "List files in the vault.",
-              parameters: {
-                type: "OBJECT",
-                properties: {
-                  directory: { type: "STRING" },
-                  recursive: { type: "BOOLEAN" },
-                  limit: { type: "NUMBER" }
-                }
-              }
-            },
-            {
-              name: "read_note",
-              description: "Read the content of a note.",
-              parameters: {
-                type: "OBJECT",
-                properties: { filename: { type: "STRING" } },
-                required: ["filename"]
-              }
-            },
-            {
-              name: "save_note",
-              description: "Save or overwrite a note.",
-              parameters: {
-                type: "OBJECT",
-                properties: {
-                  filename: { type: "STRING" },
-                  content: { type: "STRING" }
-                },
-                required: ["filename", "content"]
-              }
-            },
-            {
-              name: "update_frontmatter",
-              description: "Update frontmatter property.",
-              parameters: {
-                type: "OBJECT",
-                properties: {
-                  path: { type: "STRING" },
-                  key: { type: "STRING" },
-                  value: { type: "STRING" }
-                },
-                required: ["path", "key", "value"]
-              }
-            },
-            {
-              name: "find_files_by_name",
-              description: "Find files by name (fuzzy match). Returns the FULL PATH of matching files. Use this FULL PATH when fixing links.",
-              parameters: {
-                type: "OBJECT",
-                properties: {
-                  name: { type: "STRING" }
-                },
-                required: ["name"]
-              }
-            },
-            {
-              name: "replace_in_note",
-              description: 'Replace a specific string in a note with a new string. When fixing links, replace the old link with a Wikilink containing the FULL PATH (e.g., "![[Path/To/File.png]]").',
-              parameters: {
-                type: "OBJECT",
-                properties: {
-                  path: { type: "STRING" },
-                  target: { type: "STRING" },
-                  replacement: { type: "STRING" }
-                },
-                required: ["path", "target", "replacement"]
-              }
-            },
-            {
-              name: "delete_note",
-              description: "Safely delete a note by moving it to the Trash folder.",
-              parameters: {
-                type: "OBJECT",
-                properties: {
-                  path: { type: "STRING", description: "The path of the file to delete" }
-                },
-                required: ["path"]
-              }
-            }
-          ]
+          functionDeclarations: vaultFunctionDeclarations
         }
       ];
     } else {
       tools = [{ googleSearch: {} }];
-      systemInstruction = "You are a helpful AI assistant with access to Google Search. Use it to provide up-to-date information. Always cite your sources.";
+      systemInstruction = "You are a helpful AI assistant with access to Google Search. You must provide up-to-date information and cite your sources.\n\nIMPORTANT: You cannot directly call tools to save files in this mode. However, you can instruct the system to save a file by formatting your output exactly like this:\n\n```\n/// SAVE: <path/to/file.md>\n<File Content Here>\n```\n\nIf the user asks to save the results, wrap the content in this block. Ensure the path is valid.";
+      new import_obsidian3.Notice("Gemini Web: Search Active (Client-Side Save Enabled)");
     }
     const modelConfig = {
       model: modelName,
@@ -35515,6 +35524,39 @@ ${finalOutput}`;
         throw new Error("No text or image content in response");
       }
       console.log("Final processed response:", finalOutput);
+      console.log("Final processed response:", finalOutput);
+      if (mode === "web") {
+        const saveRegex = /(?:```)?\s*\/\/\/\s*SAVE:\s*(.+?)\n([\s\S]+?)(?:```|$)/g;
+        let match;
+        let saveDetected = false;
+        while ((match = saveRegex.exec(finalOutput)) !== null) {
+          saveDetected = true;
+          const path4 = match[1].trim();
+          const content3 = match[2];
+          console.log(`Client-Side Save detected: ${path4}`);
+          try {
+            if (!content3 || content3.trim().length === 0) {
+              throw new Error("extracted content was empty");
+            }
+            await this.vaultService.saveNote(path4, content3);
+            new import_obsidian3.Notice(`Saved: ${path4}`);
+            finalOutput += `
+
+> [!SUCCESS] Saved file: [[${path4}]]`;
+          } catch (e) {
+            console.error("Client-Side Save Failed:", e);
+            new import_obsidian3.Notice(`Failed to save ${path4}: ${e.message}`);
+            finalOutput += `
+
+> [!ERROR] Failed to save file: ${e.message}`;
+          }
+        }
+        if (!saveDetected && finalOutput.includes("/// SAVE:")) {
+          console.warn("Save pattern detected but Regex failed to extract content.");
+          new import_obsidian3.Notice("Gemini: found save command but could not parse it.");
+          finalOutput += "\n\n> [!WARNING] Auto-Save Failed: The AI tried to save a file but the format was slightly off. Please copy the content manually.";
+        }
+      }
       return finalOutput;
     } catch (e) {
       console.warn("Error processing response content", e);
@@ -35533,7 +35575,7 @@ ${finalOutput}`;
   }
   async getCustomCommands() {
     try {
-      const antigravityFile = this.app.vault.getAbstractFileByPath("ANTIGRAVITY.md");
+      const antigravityFile = this.app.vault.getAbstractFileByPath("MY_AI/ANTIGRAVITY.md");
       if (antigravityFile instanceof import_obsidian3.TFile) {
         const content3 = await this.app.vault.read(antigravityFile);
         const match = content3.match(/## Custom Commands\n([\s\S]*?)(?=$|^#)/);
@@ -35557,7 +35599,7 @@ ${finalOutput}`;
   }
   async getGems() {
     try {
-      const files = await this.vaultService.listFiles("Gemini Gems");
+      const files = await this.vaultService.listFiles("MY_AI/Gemini Gems");
       return files.map((path4) => {
         var _a4;
         return {
@@ -35582,12 +35624,12 @@ ${finalOutput}`;
     if (!this.genAI)
       throw new Error("API Key not found");
     try {
-      const dictationFile = this.app.vault.getAbstractFileByPath("Gemini/Command/AI Dictation.md");
+      const dictationFile = this.app.vault.getAbstractFileByPath("MY_AI/Gemini/Command/AI Dictation.md");
       let systemInstruction = "";
       if (dictationFile instanceof import_obsidian3.TFile) {
         systemInstruction = await this.app.vault.read(dictationFile);
       } else {
-        const spellingFile = this.app.vault.getAbstractFileByPath("Gemini/Command/Spelling Check.md");
+        const spellingFile = this.app.vault.getAbstractFileByPath("MY_AI/Gemini/Command/Spelling Check.md");
         let specializedVocab = "";
         if (spellingFile instanceof import_obsidian3.TFile) {
           specializedVocab = await this.app.vault.read(spellingFile);
@@ -35629,7 +35671,7 @@ ${input}`]);
   async syncPlugin() {
     new import_obsidian3.Notice("Syncing plugin code...");
     const { exec } = require("child_process");
-    const sourceDir = "/Users/stephenpearse/Documents/PKM/Obsidian Sync Main/gemini-assistant";
+    const sourceDir = "/Volumes/T9_Main/PKM/Obsidian Main Sync/MY_AI/gemini-assistant";
     const pathFix = "export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Xcode.app/Contents/Developer/usr/libexec/git-core";
     const commands = [
       pathFix,
